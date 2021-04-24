@@ -7,11 +7,13 @@ public class FloorController : MonoBehaviour
     public int numberOfFloors = 10;
     public GameObject floorPrefab;
 
-    public int height = 8;
+    public float height = 8.5f;
 
     public Camera screenCamera;
 
     public GameObject buildPreview;
+
+    private GameObject currentlySelected;
 
     void Start()
     {
@@ -32,7 +34,21 @@ public class FloorController : MonoBehaviour
         buildPreview.transform.rotation = hit.collider.gameObject.transform.rotation;
         buildPreview.transform.localScale = hit.collider.gameObject.transform.localScale;
 
-        Debug.Log("hit");
+        if (currentlySelected != hit.collider.gameObject) {
+            if (currentlySelected) {
+                currentlySelected.GetComponentInChildren<Renderer>().enabled = true;
+            }
+            hit.collider.gameObject.GetComponentInChildren<Renderer>().enabled = false;
+            currentlySelected = hit.collider.gameObject;
+        }
+
+        if (!Input.GetMouseButtonDown(0)) return;
+
+        currentlySelected = null;
+
+        Instantiate(buildPreview, hit.collider.gameObject.transform.position, hit.collider.gameObject.transform.rotation);
+        Destroy(hit.collider.gameObject);
+
     }
 
 }
