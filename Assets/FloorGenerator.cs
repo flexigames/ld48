@@ -8,6 +8,8 @@ public class FloorGenerator : MonoBehaviour
     public GameObject segmentPrefab;
     public int segmentCount = 6;
 
+    public Camera camera;
+
     void Awake()
     {
         ClearChildren();
@@ -15,11 +17,22 @@ public class FloorGenerator : MonoBehaviour
         var segmentAngle = 360.0f / segmentCount;
 
         for (var i = 0; i < segmentCount; i++) {
-          Instantiate(segmentPrefab, gameObject.transform.position, Quaternion.Euler(0, i * segmentAngle, 0), gameObject.transform);
+          var segmentInstance = Instantiate(segmentPrefab, gameObject.transform.position, Quaternion.Euler(0, i * segmentAngle, 0), gameObject.transform);
+          segmentInstance.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
         }
 
 
         Debug.Log("Run");
+    }
+
+    void Update() 
+    {
+        RaycastHit hit;
+        Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+
+        if (!Physics.Raycast(ray, out hit, Mathf.Infinity)) return;
+
+        Debug.Log("hit");
     }
 
     public void ClearChildren()
