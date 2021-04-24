@@ -199,7 +199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   numberOfFloors: 20
   floorPrefab: {fileID: 4695303225937637812, guid: 6b63b90a165907641ab952efecd6437e, type: 3}
-  height: 8
+  height: 8.5
   screenCamera: {fileID: 963194227}
   buildPreview: {fileID: 1619192789}
 --- !u!4 &335950619
@@ -417,7 +417,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 77.5
   orthographic: 0
   orthographic size: 20
   m_Depth: -1
