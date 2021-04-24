@@ -14,7 +14,6 @@ export default function App() {
     new FloorData(),
     new FloorData(),
     new FloorData(),
-    new FloorData()
   ])
 
   const [tiles, setTiles] = useState([
@@ -25,30 +24,40 @@ export default function App() {
 
   const [groups, setGroups] = useState<Group[]>()
 
-  useScroll()
-
   return <Main>
      {score}
       <Column>
         {floors.map((floor, index) => 
-          <Floor floorData={floor} onClick={(floor) => onPlace(index, floor)} onHover={() => {
-            for (const floor of floors) {
-              floor.tilePreview = null
-            }
-            floor.tilePreview = currentTile
-            setFloors([...floors])
-          }} />
+          <Floor floorData={floor} onClick={(floor) => onPlace(index, floor)} onHover={(index) => onHover(floor, index)} />
         )}
       </Column>
       <Column>{tiles.map(tileData => <Tile onClick={setCurrentTile} data={tileData} selected={currentTile === tileData} />)}</Column>
     </Main>
 
+  function onHover(floor: FloorData, offset: number) {
+      for (const floor of floors) {
+        floor.tilePreview = null
+      }
+      currentTile.offset = offset
+      floor.tilePreview = currentTile.cloneRotated()
+      setFloors([...floors])
+  }
+
   function onPlace(index: number, selectedFloor: FloorData) {
     if (!currentTile) return
+    
+    const rotatedTile = currentTile.cloneRotated()
 
-    if (!selectedFloor.canBePlaced(currentTile)) return
+    if (!selectedFloor.canBePlaced(rotatedTile)) return
 
-    const newFloors = floors.map((floor, secondIndex) => secondIndex === index ? selectedFloor.place(currentTile).resetSize() : floor)
+    const newFloors = floors.map((floor, secondIndex) => secondIndex === index ? selectedFloor.place(rotatedTile) : floor).map(it => it.resetSize())
+
+    for (const floor of newFloors) {
+      if (floor.wasJustCompleted()) {
+        newFloors.push(new FloorData())
+      }
+    }
+
 
     const newGroups = calculateGroups(newFloors)
 
@@ -72,26 +81,12 @@ export default function App() {
 
     setCurrentTile(null)
   }
-
-  function useScroll() {
-    useEffect(() => {
-      function listener (event) {
-          const step = event.deltaY / 100
-          if (currentTile) {
-            setCurrentTile(null)
-            setCurrentTile(currentTile.rotate(step === 1))
-          }
-      }
-      document.addEventListener('wheel', listener);
-      return () => document.removeEventListener('wheel', listener)
-    }, [currentTile])
-  }
 }
 
 type FloorProps = {
   floorData: FloorData;
   onClick?: (floorData: FloorData) => any;
-  onHover?: () => any;
+  onHover?: (index: number) => any;
 }
 
 function Floor({floorData, onClick, onHover}: FloorProps) {
@@ -99,8 +94,8 @@ function Floor({floorData, onClick, onHover}: FloorProps) {
 
   const placingIssue = floorData?.tilePreview && !floorData.canBePlaced(floorData?.tilePreview)
 
-  return <SegmentContainer hasIssue={placingIssue} onClick={() => onClick?.(floorData)} onMouseEnter={onHover}>
-    {floorData.segments.map(({color, size}, index) => <ColorSquare someColor={previewTile[index]?.color ?? color}>{size ?? ''}</ColorSquare>)}
+  return <SegmentContainer hasIssue={placingIssue} onClick={() => onClick?.(floorData)}>
+    {floorData.segments.map(({color, size}, index) => <ColorSquare onMouseEnter={() => onHover(index)} someColor={previewTile[index]?.color ?? color}>{size ?? ''}</ColorSquare>)}
   </SegmentContainer>
 }
 
@@ -135,23 +130,33 @@ enum Color {
 
 class TileData {
   segments: Segment[];
+  offset = 0;
 
   constructor() {
-    this.segments = times(segmentCount).map(n => undefined);
+    this.segments = times(segmentCount).map(n => ({color: undefined}));
     this.fillRandomly();
   }
 
   fillRandomly() {
-    this.segments = this.segments.map(() => ({color : sample([Color.Red, Color.Yellow, Color.Green, undefined, undefined, undefined, undefined, undefined, undefined])}))
+    while (this.segments.every(segment => !segment.color)) {
+      this.segments = this.segments.map(() => ({color : sample([Color.Red, Color.Yellow, Color.Green, undefined, undefined, undefined, undefined, undefined])}))
+    }
+
+    while (!this.segments[0].color) {
+      let lastSegment = this.segments[0]
+      this.segments = [...(this.segments.slice(1, segmentCount)), lastSegment]
+    }
+
     return this;
   }
 
-  rotate(direction: boolean) {
+  cloneRotated() {
     const segmentCopy = [...this.segments]
+    const newTile = new TileData()
     for (let i = 0; i < segmentCount; i++) {
-      this.segments[i] = segmentCopy[(i + segmentCount + (direction ? 1 : -1)) % segmentCount]
+      newTile.segments[i] = segmentCopy[(i + segmentCount - this.offset) % segmentCount]
     }
-    return this
+    return newTile
   }
 }
 
@@ -163,6 +168,7 @@ type Segment = {
 class FloorData {
   segments:  Segment[];
   tilePreview?: TileData;
+  isCompleted: boolean;
 
   constructor() {
     this.segments = times(segmentCount).map(n => ({color: undefined}));
@@ -198,6 +204,13 @@ class FloorData {
   
     return newFloorData
   }
+
+  wasJustCompleted() {
+    if (this.isCompleted) return false
+  
+    this.isCompleted = true
+    return this.segments.every(segment => segment.color);
+  }
 }
 
 interface ColorSquareProps {
@@ -229,11 +242,8 @@ const Column = styled.div`
 
 const Main = styled.div`
   display: flex;
-  align-items: center;
   justify-content: center;
-  height: 100%;
 
-  background-color: #eeeee4;
   color: #242422;
   font-size: 75px;
   flex-direction: row;
