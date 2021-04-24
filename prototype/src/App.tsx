@@ -25,13 +25,13 @@ export default function App() {
   const [groups, setGroups] = useState<Group[]>()
 
   return <Main>
-     {score}
+      depthscraper
       <Column>
         {floors.map((floor, index) => 
           <Floor floorData={floor} onClick={(floor) => onPlace(index, floor)} onHover={(index) => onHover(floor, index)} />
         )}
       </Column>
-      <Column>{tiles.map(tileData => <Tile onClick={setCurrentTile} data={tileData} selected={currentTile === tileData} />)}</Column>
+      <Tiles>      <Score>{score}</Score>{tiles.map(tileData => <Tile onClick={setCurrentTile} data={tileData} selected={currentTile === tileData} />)}</Tiles>
     </Main>
 
   function onHover(floor: FloorData, offset: number) {
@@ -116,9 +116,11 @@ const SegmentContainer = styled.div<{selected?: boolean, hasIssue?: boolean}>`
   display: flex;
   flex-direction: row;
   text-align: center;
+  align-items: center;
   gap: 6px;
+  border-radius: 4px;
   ${({hasIssue}) =>  `opacity: ${hasIssue ? '0.5' : '1'};`}
-  ${({selected}) =>  `border: 2px dotted ${selected ? 'black' : 'transparent'};`}
+  ${({selected}) =>  `border: 4px solid ${selected ? 'black' : 'transparent'};`}
 `
 
 enum Color {
@@ -229,10 +231,10 @@ const ColorSquare = styled.div<ColorSquareProps>`
 const empty = new FloorData();
 
 function colorToHtmlColor(color: Color) {
-  if (color === Color.Red) return 'red';
-  if (color === Color.Yellow) return 'yellow';
-  if (color === Color.Green) return 'green';
-  return 'black';
+  if (color === Color.Red) return '#FF4136';
+  if (color === Color.Yellow) return '#FFDC00';
+  if (color === Color.Green) return '#3D9970';
+  return '#272727';
 }
 
 const Column = styled.div`
@@ -242,11 +244,12 @@ const Column = styled.div`
 
 const Main = styled.div`
   display: flex;
-  justify-content: center;
+  align-items: center;
+  margin: 16px;
 
-  color: #242422;
-  font-size: 75px;
-  flex-direction: row;
+  color: #2b2b24;
+  font-size: 70px;
+  flex-direction: column;
   gap: 40px;
 `
 
@@ -315,3 +318,17 @@ function calculateGroups(floors: FloorData[]) {
     }
   }
 }
+
+const Tiles = styled(Column)`
+  position: fixed;
+  right: -50px;
+  bottom: -100px;
+  transform: scale(0.5);
+  display: flex;
+  align-items: center;
+`
+
+const Score = styled.div`
+  margin-bottom: 16px;
+  font-size: 200px;
+`
