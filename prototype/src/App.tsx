@@ -1,13 +1,13 @@
 import React, {useState, useEffect} from 'react'
 import styled from 'styled-components'
-import {flowRight, sample, times} from 'lodash'
+import {keyBy, sample, times} from 'lodash'
 
 const segmentCount = 6;
 
-
-
 export default function App() {
   const [currentTile, setCurrentTile] = useState<TileData>()
+
+  const [score, setScore] = useState(0)
 
   const [floors, setFloors] = useState([
     new FloorData(),
@@ -23,9 +23,12 @@ export default function App() {
     new TileData()
   ])
 
+  const [groups, setGroups] = useState<Group[]>()
+
   useScroll()
 
   return <Main>
+     {score}
       <Column>
         {floors.map((floor, index) => 
           <Floor floorData={floor} onClick={(floor) => onPlace(index, floor)} onHover={() => {
@@ -45,7 +48,25 @@ export default function App() {
 
     if (!selectedFloor.canBePlaced(currentTile)) return
 
-    setFloors(floors.map((floor, secondIndex) => secondIndex === index ? selectedFloor.place(currentTile) : floor))
+    const newFloors = floors.map((floor, secondIndex) => secondIndex === index ? selectedFloor.place(currentTile).resetSize() : floor)
+
+    const newGroups = calculateGroups(newFloors)
+
+    const groupByPosition = keyBy(groups, group => `${group.position.x}-${group.position.y}`)
+    const newGroupByPosition = keyBy(newGroups, group => `${group.position.x}-${group.position.y}`)
+    for (const positionKey in newGroupByPosition) {
+      if (newGroupByPosition[positionKey].count > (groupByPosition[positionKey]?.count ?? 0)) {
+        setScore(score => score + newGroupByPosition[positionKey].count)
+      }
+    }
+
+    setGroups(newGroups)
+    for (const group of newGroups) {
+      const floor = newFloors[group.position.y]
+      floor.segments[group.position.x].size = group.count
+    }
+
+    setFloors(newFloors)
 
     setTiles(tiles.map(tile => tile === currentTile ?  new TileData() : tile))
 
@@ -79,7 +100,7 @@ function Floor({floorData, onClick, onHover}: FloorProps) {
   const placingIssue = floorData?.tilePreview && !floorData.canBePlaced(floorData?.tilePreview)
 
   return <SegmentContainer hasIssue={placingIssue} onClick={() => onClick?.(floorData)} onMouseEnter={onHover}>
-    {floorData.segments.map((color: Color, index) => <ColorSquare someColor={previewTile[index] ?? color}/>)}
+    {floorData.segments.map(({color, size}, index) => <ColorSquare someColor={previewTile[index]?.color ?? color}>{size ?? ''}</ColorSquare>)}
   </SegmentContainer>
 }
 
@@ -92,13 +113,14 @@ type TileProps = {
 
 function Tile({data, onClick, selected}: TileProps) {
   return <SegmentContainer onClick={() => onClick?.(data)} selected={selected}>
-    {data.segments.map((color: Color) => <ColorSquare someColor={color}/>)}
+    {data.segments.map(({color}) => <ColorSquare someColor={color}/>)}
   </SegmentContainer>
 }
 
-const SegmentContainer = styled.div<{selected?: boolean, hasIssue?: boolean}>`\
+const SegmentContainer = styled.div<{selected?: boolean, hasIssue?: boolean}>`
   display: flex;
   flex-direction: row;
+  text-align: center;
   gap: 6px;
   ${({hasIssue}) =>  `opacity: ${hasIssue ? '0.5' : '1'};`}
   ${({selected}) =>  `border: 2px dotted ${selected ? 'black' : 'transparent'};`}
@@ -110,10 +132,9 @@ enum Color {
   Green
 }
 
-type Segments = Color[];
 
 class TileData {
-  segments: Segments;
+  segments: Segment[];
 
   constructor() {
     this.segments = times(segmentCount).map(n => undefined);
@@ -121,7 +142,7 @@ class TileData {
   }
 
   fillRandomly() {
-    this.segments = this.segments.map(() => sample([Color.Red, Color.Yellow, Color.Green, undefined, undefined, undefined, undefined, undefined, undefined]))
+    this.segments = this.segments.map(() => ({color : sample([Color.Red, Color.Yellow, Color.Green, undefined, undefined, undefined, undefined, undefined, undefined])}))
     return this;
   }
 
@@ -134,22 +155,31 @@ class TileData {
   }
 }
 
+type Segment = {
+  color?: Color;
+  size?: number;
+}
+
 class FloorData {
-  segments: Segments;
+  segments:  Segment[];
   tilePreview?: TileData;
 
   constructor() {
-    this.segments = times(segmentCount).map(n => undefined);
+    this.segments = times(segmentCount).map(n => ({color: undefined}));
   }
 
   canBePlaced(tile: TileData) {
     for (let i = 0; i < segmentCount; i++) {
-      console.log(tile.segments[i], this.segments[i])
-      if (tile.segments[i] && this.segments[i]) {
+      if (tile.segments[i].color && this.segments[i].color) {
         return false
       }
     }
     return true
+  }
+
+  resetSize() {
+    this.segments = this.segments.map(segment => ({...segment, size: null}))
+    return  this
   }
 
   clone() {
@@ -163,7 +193,7 @@ class FloorData {
     if (!this.canBePlaced(tile)) return newFloorData
 
     for (let i = 0; i < segmentCount; i++) {
-      newFloorData.segments[i] = this.segments[i] ?? tile.segments[i]
+      newFloorData.segments[i].color = this.segments[i].color ?? tile.segments[i].color
     }
   
     return newFloorData
@@ -209,3 +239,69 @@ const Main = styled.div`
   flex-direction: row;
   gap: 40px;
 `
+
+type Group = {
+  id: number;
+  position: {x: number, y: number};
+  color: Color;
+  count: number;
+}
+
+function calculateGroups(floors: FloorData[]) {
+  const grid = floors.map(floor => floor.segments.map(({color}) => ({color, group: null})))
+  let nextGroup = 1;
+
+  const groups: Record<number, Group> = {}
+
+  for (let y in grid) {
+    for (let x in grid[y]) {
+      if (!grid[y][x].color) continue;
+      if (grid[y][x].group) continue;
+
+      const currentGroup = nextGroup
+      groups[currentGroup] = {
+        id: currentGroup,
+        position: {
+          x: Number(x),
+          y: Number(y)
+        },
+        color: grid[y][x].color,
+        count: 0
+      }
+      nextGroup++
+    
+      const cellColor = grid[y][x].color
+    
+      setGroupForSameNeighbors(cellColor, currentGroup, Number(x), Number(y))
+    }
+  }
+
+
+  return Object.values(groups)
+
+  function setGroupForSameNeighbors(cellColor: Color, currentGroup: number, x: number, y: number) {
+    if (grid[y][x].group) return
+  
+    grid[y][x].group = currentGroup
+    groups[currentGroup].count++
+  
+    const neighborUp = grid[y - 1]?.[x]
+    if (neighborUp?.color === cellColor) {
+      setGroupForSameNeighbors(cellColor, currentGroup, x, y - 1)
+    }
+    const neigborDown = grid[y + 1]?.[x]
+    if (neigborDown?.color === cellColor) {
+      setGroupForSameNeighbors(cellColor, currentGroup, x, y + 1)
+    }
+
+    const neigborRight = grid[y][x+1]
+    if (neigborRight?.color === cellColor) {
+      setGroupForSameNeighbors(cellColor, currentGroup, x + 1, y)
+    }
+
+    const neigborLeft = grid[y][x-1]
+    if (neigborLeft?.color === cellColor) {
+      setGroupForSameNeighbors(cellColor, currentGroup, x - 1, y)
+    }
+  }
+}

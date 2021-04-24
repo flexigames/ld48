@@ -6,9 +6,10 @@ using UnityEngine;
 public class FloorGenerator : MonoBehaviour
 {    
     public GameObject segmentPrefab;
+
     public int segmentCount = 6;
 
-    public Camera camera;
+
 
     void Awake()
     {
@@ -23,16 +24,6 @@ public class FloorGenerator : MonoBehaviour
 
 
         Debug.Log("Run");
-    }
-
-    void Update() 
-    {
-        RaycastHit hit;
-        Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-
-        if (!Physics.Raycast(ray, out hit, Mathf.Infinity)) return;
-
-        Debug.Log("hit");
     }
 
     public void ClearChildren()
