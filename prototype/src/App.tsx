@@ -225,6 +225,7 @@ const ColorSquare = styled.div<ColorSquareProps>`
   width: 100px;
   height: 100px;
   margin: 2px;
+  border-radius: 2px;
   background-color: ${({someColor}: {someColor: Color}) => colorToHtmlColor(someColor)};
 `
 
