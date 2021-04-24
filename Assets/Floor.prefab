@@ -43,5 +43,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2c1664fe43735e4a857e741cd1146fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  segmentPrefab: {fileID: 919132149155446097, guid: 27f118e42ea3d22419537a84df13ddb4, type: 3}
+  segmentPrefab: {fileID: 919132149155446097, guid: b65debb56338ade40b0c70c21393087b, type: 3}
   segmentCount: 6
