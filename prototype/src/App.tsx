@@ -139,7 +139,7 @@ class TileData {
 
   fillRandomly() {
     while (this.segments.every(segment => !segment.color)) {
-      this.segments = this.segments.map(() => ({color : sample([Color.Red, Color.Yellow, Color.Green, undefined, undefined, undefined, undefined, undefined])}))
+      this.segments = this.segments.map(() => ({color : sample([Color.Red, Color.Yellow, Color.Green, undefined, undefined, undefined, undefined, undefined, undefined])}))
     }
 
     while (!this.segments[0].color) {
