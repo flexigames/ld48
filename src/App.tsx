@@ -5,7 +5,7 @@ import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
-import {addHighscore, getHighscores} from './firebase'
+import {addHighscore, getHighscores, Score} from './firebase'
 
 type Groups = Record<number, Group>
 
@@ -31,14 +31,17 @@ export default function App() {
 
   const [challenge, setChallenge] = useState<ChallengeData>(generateChallenge)
 
-  const [highscores, setHighscores] = useState<{score: number}[]>([])
+  const [highscores, setHighscores] = useState<Score[]>([])
 
   useEffect(() => {
     getHighscores().then(setHighscores)
   })
 
   useEffect(() => {
-    if (movesLeft === 0) addHighscore(score)
+    if (movesLeft === 0) {
+      const name = prompt(`what is your name?`).slice(0, 10)
+      addHighscore(score, name)
+    }
   }, [movesLeft])
 
   return (
@@ -77,8 +80,10 @@ export default function App() {
       </Tiles>
       <Highscores>
         <strong>highscore</strong>
-        {highscores.map((highscore, index) => (
-          <div key={index}>{highscore.score}</div>
+        {highscores.map(({name, score}, index) => (
+          <div key={index}>
+            {name}: {score}
+          </div>
         ))}
       </Highscores>
     </Main>
