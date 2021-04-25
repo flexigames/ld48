@@ -104,11 +104,7 @@ export default function App() {
 
     updateGroupCompletedState(floors, groups)
 
-    for (const group of Object.values(groups)) {
-      const sizeTextPosition = getSizeTextPosition(group)
-      const floor = newFloors[sizeTextPosition.y]
-      floor.segments[sizeTextPosition.x].size = group.positions.length
-    }
+    updateSizeText(newFloors, groups)
 
     setFloors(newFloors)
 
@@ -134,9 +130,16 @@ export default function App() {
           hasNoEmptyNeighbours(floors, position)
         )
       ) {
-        console.log('complete at move ' + currentMove)
         group.completedAtMove = currentMove
       }
+    }
+  }
+
+  function updateSizeText(floors: Floor[], groups: Groups) {
+    for (const group of Object.values(groups)) {
+      const sizeTextPosition = getSizeTextPosition(group)
+      const floor = floors[sizeTextPosition.y]
+      floor.segments[sizeTextPosition.x].size = group.positions.length
     }
   }
 
