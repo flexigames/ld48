@@ -92,6 +92,8 @@ export default function App() {
       }
     }
 
+    const oldGroupIds = Object.keys(groups)
+
     createGroupsForNewSegments(groups, y, rotatedTile.segments)
 
     for (let x = 0; x < segmentCount; x++) {
@@ -101,22 +103,7 @@ export default function App() {
 
     // checkChallenge(groups)
 
-    // const groupByPosition = keyBy(
-    //   groups,
-    //   (group) => `${group.position.x}-${group.position.y}`
-    // )
-    // const newGroupByPosition = keyBy(
-    //   groups,
-    //   (group) => `${group.position.x}-${group.position.y}`
-    // )
-    // for (const positionKey in newGroupByPosition) {
-    //   if (
-    //     newGroupByPosition[positionKey].count >
-    //     (groupByPosition[positionKey]?.count ?? 0)
-    //   ) {
-    //     setScore((score) => score + newGroupByPosition[positionKey].count)
-    //   }
-    // }
+    updateScore(oldGroupIds)
 
     for (const group of Object.values(groups)) {
       const sizeTextPosition = getSizeTextPosition(group)
@@ -130,6 +117,13 @@ export default function App() {
 
     setCurentMove((round) => round + 1)
     setCurrentTile(null)
+  }
+
+  function updateScore(oldGroupIds: string[]) {
+    for (const group of Object.values(groups)) {
+      if (!oldGroupIds.includes(String(group.id)))
+        setScore((score) => score + group.positions.length)
+    }
   }
 
   // function checkChallenge(groups: Group[]) {
