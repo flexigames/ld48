@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import styled from 'styled-components'
-import {keyBy, sample, times} from 'lodash'
-import {Floor, Tile} from './types'
+import {sample, times} from 'lodash'
+import {Floor, Segment, Tile} from './types'
 import {
   canBePlaced,
   createFloor,
@@ -10,6 +10,11 @@ import {
   wasJustCompleted
 } from './floor'
 import {cloneRotated, createTile} from './tile'
+import {segmentCount} from './const'
+
+type Groups = Record<number, Group>
+
+const groups: Groups = {}
 
 export default function App() {
   const [currentTile, setCurrentTile] = useState<Tile>()
@@ -24,8 +29,6 @@ export default function App() {
   ])
 
   const [tiles, setTiles] = useState([createTile(), createTile(), createTile()])
-
-  const [groups, setGroups] = useState<Group[]>()
 
   const [currentMove, setCurentMove] = useState<number>(0)
 
@@ -70,7 +73,7 @@ export default function App() {
     setFloors([...floors])
   }
 
-  function onPlace(index: number, selectedFloor: Floor) {
+  function onPlace(y: number, selectedFloor: Floor) {
     if (!currentTile) return
 
     const rotatedTile = cloneRotated(currentTile)
@@ -79,7 +82,7 @@ export default function App() {
 
     const newFloors = floors
       .map((floor, secondIndex) =>
-        secondIndex === index ? place(selectedFloor, rotatedTile) : floor
+        secondIndex === y ? place(selectedFloor, rotatedTile) : floor
       )
       .map(resetSize)
 
@@ -89,31 +92,36 @@ export default function App() {
       }
     }
 
-    const newGroups = calculateGroups(newFloors, currentMove)
+    createGroupsForNewSegments(groups, y, rotatedTile.segments)
 
-    checkChallenge(newGroups)
-
-    const groupByPosition = keyBy(
-      groups,
-      (group) => `${group.position.x}-${group.position.y}`
-    )
-    const newGroupByPosition = keyBy(
-      newGroups,
-      (group) => `${group.position.x}-${group.position.y}`
-    )
-    for (const positionKey in newGroupByPosition) {
-      if (
-        newGroupByPosition[positionKey].count >
-        (groupByPosition[positionKey]?.count ?? 0)
-      ) {
-        setScore((score) => score + newGroupByPosition[positionKey].count)
-      }
+    for (let x = 0; x < segmentCount; x++) {
+      if (!rotatedTile.segments[x].color) continue
+      mergeGroups(newFloors, groups, {x, y})
     }
 
-    setGroups(newGroups)
-    for (const group of newGroups) {
-      const floor = newFloors[group.position.y]
-      floor.segments[group.position.x].size = group.count
+    // checkChallenge(groups)
+
+    // const groupByPosition = keyBy(
+    //   groups,
+    //   (group) => `${group.position.x}-${group.position.y}`
+    // )
+    // const newGroupByPosition = keyBy(
+    //   groups,
+    //   (group) => `${group.position.x}-${group.position.y}`
+    // )
+    // for (const positionKey in newGroupByPosition) {
+    //   if (
+    //     newGroupByPosition[positionKey].count >
+    //     (groupByPosition[positionKey]?.count ?? 0)
+    //   ) {
+    //     setScore((score) => score + newGroupByPosition[positionKey].count)
+    //   }
+    // }
+
+    for (const group of Object.values(groups)) {
+      const sizeTextPosition = getSizeTextPosition(group)
+      const floor = newFloors[sizeTextPosition.y]
+      floor.segments[sizeTextPosition.x].size = group.positions.length
     }
 
     setFloors(newFloors)
@@ -124,21 +132,21 @@ export default function App() {
     setCurrentTile(null)
   }
 
-  function checkChallenge(groups: Group[]) {
-    const relevantGroups = groups.filter(
-      ({completedAtMove}) => !completedAtMove || completedAtMove === currentMove
-    )
-    for (const relevantGroup of relevantGroups) {
-      if (
-        relevantGroup.color === challenge.color &&
-        relevantGroup.count >= challenge.size
-      ) {
-        setChallenge(generateChallenge())
-        setScore((score) => score + challenge.reward)
-        return
-      }
-    }
-  }
+  // function checkChallenge(groups: Group[]) {
+  //   const relevantGroups = groups.filter(
+  //     ({completedAtMove}) => !completedAtMove || completedAtMove === currentMove
+  //   )
+  //   for (const relevantGroup of relevantGroups) {
+  //     if (
+  //       relevantGroup.color === challenge.color &&
+  //       relevantGroup.count >= challenge.size
+  //     ) {
+  //       setChallenge(generateChallenge())
+  //       setScore((score) => score + challenge.reward)
+  //       return
+  //     }
+  //   }
+  // }
 }
 
 type ChallengeData = {
@@ -268,88 +276,16 @@ const Main = styled.div`
   gap: 40px;
 `
 
-type Group = {
-  id: number
-  position: {x: number; y: number}
-  color: Color
-  count: number
-  completedAtMove?: number
+type Position = {
+  x: number
+  y: number
 }
 
-function calculateGroups(floors: Floor[], currentMove: number) {
-  const grid = floors.map((floor) =>
-    floor.segments.map(({color}) => ({color, group: null}))
-  )
-  let nextGroup = 1
-
-  const groups: Record<number, Group> = {}
-
-  for (let y = grid.length - 1; y >= 0; y--) {
-    for (let x = grid[y].length - 1; x >= 0; x--) {
-      if (!grid[y][x].color) continue
-      if (grid[y][x].group) continue
-
-      const currentGroup = nextGroup
-      groups[currentGroup] = {
-        id: currentGroup,
-        position: {
-          x,
-          y
-        },
-        color: grid[y][x].color,
-        count: 0,
-        completedAtMove: currentMove // Assume completed, algorithm will reset if it finds empty neighbor
-      }
-      nextGroup++
-
-      const cellColor = grid[y][x].color
-
-      setGroupForSameNeighbors(cellColor, currentGroup, x, y)
-    }
-  }
-
-  return Object.values(groups)
-
-  function setGroupForSameNeighbors(
-    cellColor: Color,
-    currentGroup: number,
-    x: number,
-    y: number
-  ) {
-    if (grid[y][x].group) return
-
-    grid[y][x].group = currentGroup
-    groups[currentGroup].count++
-
-    const neighborUp = grid[y - 1]?.[x]
-    if (neighborUp?.color === cellColor) {
-      setGroupForSameNeighbors(cellColor, currentGroup, x, y - 1)
-    }
-    const neighborDown = grid[y + 1]?.[x]
-    if (neighborDown?.color === cellColor) {
-      setGroupForSameNeighbors(cellColor, currentGroup, x, y + 1)
-    }
-
-    const neighborRight = grid[y][x + 1]
-    if (neighborRight?.color === cellColor) {
-      setGroupForSameNeighbors(cellColor, currentGroup, x + 1, y)
-    }
-
-    const neighborLeft = grid[y][x - 1]
-    if (neighborLeft?.color === cellColor) {
-      setGroupForSameNeighbors(cellColor, currentGroup, x - 1, y)
-    }
-
-    const hasEmptyNeighbor =
-      !neighborUp?.color ||
-      !neighborDown?.color ||
-      !neighborLeft?.color ||
-      !neighborRight?.color
-
-    if (hasEmptyNeighbor) {
-      groups[currentGroup].completedAtMove = undefined
-    }
-  }
+type Group = {
+  id: number
+  color: Color
+  completedAtMove?: number
+  positions: Position[]
 }
 
 const Tiles = styled(Column)`
@@ -366,7 +302,85 @@ const Score = styled.div`
   font-size: 200px;
 `
 
-window.addEventListener('beforeunload', function (e) {
-  e.preventDefault()
-  e.returnValue = 'Are you sure you want to leave?'
-})
+function getSegment(floors: Floor[], position: Position) {
+  return floors[position.y]?.segments?.[position.x]
+}
+
+function mergeGroups(
+  floors: Floor[],
+  groups: Groups,
+  position: Position
+): Groups {
+  const currentSegment = getSegment(floors, position)
+
+  for (const neighborPosition of getNeighborPositions(position)) {
+    const neighbor = getSegment(floors, neighborPosition)
+    if (!neighbor || neighbor.color !== currentSegment.color) continue
+
+    const currentGroup = getGroup(groups, position)
+    const neighborGroup = getGroup(groups, neighborPosition)
+
+    if (currentGroup.id === neighborGroup.id) continue
+
+    const newPositions = [...currentGroup.positions, ...neighborGroup.positions]
+    const newGroup = createGroup(currentGroup.color, newPositions)
+
+    groups[newGroup.id] = newGroup
+    delete groups[currentGroup.id]
+    delete groups[neighborGroup.id]
+  }
+
+  return groups
+}
+
+let nextGroupId = 1
+
+function createGroup(color: Color, positions: Position[] = []): Group {
+  return {
+    id: ++nextGroupId,
+    positions,
+    color
+  }
+}
+
+function getGroup(groups: Groups, position: Position): Group {
+  return Object.entries(groups).find(([, group]) =>
+    group.positions.some(({x, y}) => position.x === x && position.y === y)
+  )[1]
+}
+
+function getNeighborPositions(position: Position): Position[] {
+  const offsets = [
+    [0, 1],
+    [0, -1],
+    [1, 0],
+    [-1, 0]
+  ]
+
+  return offsets.map(([x, y]) => ({x: position.x + x, y: position.y + y}))
+}
+
+function createGroupsForNewSegments(
+  groups: Groups,
+  y: number,
+  segments: Segment[]
+) {
+  for (let x = 0; x < segmentCount; x++) {
+    const segment = segments[x]
+    if (!segment.color) continue
+
+    const group = createGroup(segment.color, [{x, y}])
+    groups[group.id] = group
+  }
+}
+
+function getSizeTextPosition(group: Group): Position {
+  return group.positions.reduce((bestSoFar, current) =>
+    current.y >= bestSoFar.y ? current : bestSoFar
+  )
+}
+
+// window.addEventListener('beforeunload', function (e) {
+//   e.preventDefault()
+//   e.returnValue = 'Are you sure you want to leave?'
+// })

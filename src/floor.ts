@@ -27,15 +27,14 @@ export function resetSize(floor: Floor): Floor {
   return floor
 }
 
-// doesn't clone everything, still needed?
-export function clone(floor: Floor): Floor {
+export function cloneFloor(floor: Floor): Floor {
   const newFloor = createFloor()
   newFloor.segments = [...floor.segments]
   return newFloor
 }
 
 export function place(floor: Floor, tile: Tile): Floor {
-  const newFloor = clone(floor)
+  const newFloor = cloneFloor(floor)
   if (!canBePlaced(floor, tile)) return newFloor
 
   for (let i = 0; i < segmentCount; i++) {
