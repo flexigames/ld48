@@ -365,3 +365,8 @@ const Score = styled.div`
   margin-bottom: 16px;
   font-size: 200px;
 `
+
+window.addEventListener('beforeunload', function (e) {
+  e.preventDefault()
+  e.returnValue = 'Are you sure you want to leave?'
+})
