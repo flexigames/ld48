@@ -1,26 +1,29 @@
 import React, {useState} from 'react'
 import styled from 'styled-components'
 import {keyBy, sample, times} from 'lodash'
-
-const segmentCount = 4
+import {Floor, Tile} from './types'
+import {
+  canBePlaced,
+  createFloor,
+  place,
+  resetSize,
+  wasJustCompleted
+} from './floor'
+import {cloneRotated, createTile} from './tile'
 
 export default function App() {
-  const [currentTile, setCurrentTile] = useState<TileData>()
+  const [currentTile, setCurrentTile] = useState<Tile>()
 
   const [score, setScore] = useState(0)
 
   const [floors, setFloors] = useState([
-    new FloorData(),
-    new FloorData(),
-    new FloorData(),
-    new FloorData()
+    createFloor(),
+    createFloor(),
+    createFloor(),
+    createFloor()
   ])
 
-  const [tiles, setTiles] = useState([
-    new TileData(),
-    new TileData(),
-    new TileData()
-  ])
+  const [tiles, setTiles] = useState([createTile(), createTile(), createTile()])
 
   const [groups, setGroups] = useState<Group[]>()
 
@@ -33,7 +36,7 @@ export default function App() {
       depthscraper
       <Column>
         {floors.map((floor, index) => (
-          <Floor
+          <FloorView
             key={index}
             floorData={floor}
             onClick={(floor) => onPlace(index, floor)}
@@ -45,7 +48,7 @@ export default function App() {
         <Challenge {...challenge} />
         <Score>{score}</Score>
         {tiles.map((tileData, index) => (
-          <Tile
+          <TileView
             key={index}
             onClick={setCurrentTile}
             data={tileData}
@@ -56,31 +59,33 @@ export default function App() {
     </Main>
   )
 
-  function onHover(floor: FloorData, offset: number) {
+  function onHover(floor: Floor, offset: number) {
+    if (!currentTile) return
+
     for (const floor of floors) {
       floor.tilePreview = null
     }
     currentTile.offset = offset
-    floor.tilePreview = currentTile.cloneRotated()
+    floor.tilePreview = cloneRotated(currentTile)
     setFloors([...floors])
   }
 
-  function onPlace(index: number, selectedFloor: FloorData) {
+  function onPlace(index: number, selectedFloor: Floor) {
     if (!currentTile) return
 
-    const rotatedTile = currentTile.cloneRotated()
+    const rotatedTile = cloneRotated(currentTile)
 
-    if (!selectedFloor.canBePlaced(rotatedTile)) return
+    if (!canBePlaced(selectedFloor, rotatedTile)) return
 
     const newFloors = floors
       .map((floor, secondIndex) =>
-        secondIndex === index ? selectedFloor.place(rotatedTile) : floor
+        secondIndex === index ? place(selectedFloor, rotatedTile) : floor
       )
-      .map((it) => it.resetSize())
+      .map(resetSize)
 
     for (const floor of newFloors) {
-      if (floor.wasJustCompleted()) {
-        newFloors.push(new FloorData())
+      if (wasJustCompleted(floor)) {
+        newFloors.push(createFloor())
       }
     }
 
@@ -113,9 +118,7 @@ export default function App() {
 
     setFloors(newFloors)
 
-    setTiles(
-      tiles.map((tile) => (tile === currentTile ? new TileData() : tile))
-    )
+    setTiles(tiles.map((tile) => (tile === currentTile ? createTile() : tile)))
 
     setCurentMove((round) => round + 1)
     setCurrentTile(null)
@@ -158,16 +161,16 @@ function generateChallenge() {
 }
 
 type FloorProps = {
-  floorData: FloorData
-  onClick?: (floorData: FloorData) => any
+  floorData: Floor
+  onClick?: (floorData: Floor) => any
   onHover?: (index: number) => any
 }
 
-function Floor({floorData, onClick, onHover}: FloorProps) {
+function FloorView({floorData, onClick, onHover}: FloorProps) {
   const previewTile = floorData?.tilePreview?.segments ?? {}
 
   const placingIssue =
-    floorData?.tilePreview && !floorData.canBePlaced(floorData?.tilePreview)
+    floorData?.tilePreview && !canBePlaced(floorData, floorData?.tilePreview)
 
   return (
     <SegmentContainer
@@ -188,12 +191,12 @@ function Floor({floorData, onClick, onHover}: FloorProps) {
 }
 
 type TileProps = {
-  data: TileData
-  onClick?: (data: TileData) => any
+  data: Tile
+  onClick?: (data: Tile) => any
   selected: boolean
 }
 
-function Tile({data, onClick, selected}: TileProps) {
+function TileView({data, onClick, selected}: TileProps) {
   return (
     <SegmentContainer onClick={() => onClick?.(data)} selected={selected}>
       {data.segments.map(({color}, index) => (
@@ -224,108 +227,6 @@ enum Color {
   Red = 1,
   Yellow,
   Green
-}
-
-class TileData {
-  segments: Segment[]
-  offset = 0
-
-  constructor() {
-    this.segments = times(segmentCount).map(() => ({color: undefined}))
-    this.fillRandomly()
-  }
-
-  fillRandomly() {
-    while (this.segments.every((segment) => !segment.color)) {
-      this.segments = this.segments.map(() => ({
-        color: sample([
-          Color.Red,
-          Color.Yellow,
-          Color.Green,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined,
-          undefined
-        ])
-      }))
-    }
-
-    while (!this.segments[0].color) {
-      let lastSegment = this.segments[0]
-      this.segments = [...this.segments.slice(1, segmentCount), lastSegment]
-    }
-
-    return this
-  }
-
-  cloneRotated() {
-    const segmentCopy = [...this.segments]
-    const newTile = new TileData()
-    for (let i = 0; i < segmentCount; i++) {
-      newTile.segments[i] =
-        segmentCopy[(i + segmentCount - this.offset) % segmentCount]
-    }
-    return newTile
-  }
-}
-
-type Segment = {
-  color?: Color
-  size?: number
-}
-
-class FloorData {
-  segments: Segment[]
-  tilePreview?: TileData
-  isCompleted: boolean
-
-  constructor() {
-    this.segments = times(segmentCount).map(() => ({color: undefined}))
-  }
-
-  canBePlaced(tile: TileData) {
-    for (let i = 0; i < segmentCount; i++) {
-      if (tile.segments[i].color && this.segments[i].color) {
-        return false
-      }
-    }
-    return true
-  }
-
-  resetSize() {
-    this.segments = this.segments.map((segment) => ({
-      ...segment,
-      size: null
-    }))
-    return this
-  }
-
-  clone() {
-    const newFloorData = new FloorData()
-    newFloorData.segments = [...this.segments]
-    return newFloorData
-  }
-
-  place(tile: TileData) {
-    const newFloorData = this.clone()
-    if (!this.canBePlaced(tile)) return newFloorData
-
-    for (let i = 0; i < segmentCount; i++) {
-      newFloorData.segments[i].color =
-        this.segments[i].color ?? tile.segments[i].color
-    }
-
-    return newFloorData
-  }
-
-  wasJustCompleted() {
-    if (this.isCompleted) return false
-
-    this.isCompleted = true
-    return this.segments.every((segment) => segment.color)
-  }
 }
 
 interface ColorSquareProps {
@@ -375,7 +276,7 @@ type Group = {
   completedAtMove?: number
 }
 
-function calculateGroups(floors: FloorData[], currentMove: number) {
+function calculateGroups(floors: Floor[], currentMove: number) {
   const grid = floors.map((floor) =>
     floor.segments.map(({color}) => ({color, group: null}))
   )
