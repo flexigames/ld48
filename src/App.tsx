@@ -33,7 +33,7 @@ export default function App() {
 
   const [currentMove, setCurentMove] = useState<number>(0)
 
-  const [challenge, setChallenge] = useState<ChallengeData>(generateChallenge())
+  const [challenge, setChallenge] = useState<ChallengeData>(generateChallenge)
 
   return (
     <Main>
@@ -43,6 +43,8 @@ export default function App() {
           <FloorView
             key={index}
             floorData={floor}
+            groups={groups}
+            y={index}
             onClick={(floor) => onPlace(index, floor)}
             onHover={(index) => onHover(floor, index)}
           />
@@ -183,9 +185,11 @@ type FloorProps = {
   floorData: Floor
   onClick?: (floorData: Floor) => any
   onHover?: (index: number) => any
+  y: number
+  groups: Groups
 }
 
-function FloorView({floorData, onClick, onHover}: FloorProps) {
+function FloorView({floorData, onClick, onHover, groups, y}: FloorProps) {
   const previewTile = floorData?.tilePreview?.segments ?? {}
 
   const placingIssue =
@@ -196,11 +200,12 @@ function FloorView({floorData, onClick, onHover}: FloorProps) {
       hasIssue={placingIssue}
       onClick={() => onClick?.(floorData)}
     >
-      {floorData.segments.map(({color, size}, index) => (
+      {floorData.segments.map(({color, size}, x) => (
         <ColorSquare
-          key={index}
-          onMouseEnter={() => onHover(index)}
-          someColor={previewTile[index]?.color ?? color}
+          key={x}
+          onMouseEnter={() => onHover(x)}
+          someColor={previewTile[x]?.color ?? color}
+          completed={Boolean(getGroup(groups, {x, y})?.completedAtMove)}
         >
           {size ?? ''}
         </ColorSquare>
@@ -250,16 +255,19 @@ enum Color {
 
 interface ColorSquareProps {
   someColor: Color
+  completed: boolean
 }
 
 const ColorSquare = styled.div<ColorSquareProps>`
   width: 100px;
   height: 100px;
   margin: 2px;
+  box-sizing: border-box;
   border-radius: 2px;
   align-items: center;
   justify-content: center;
   display: flex;
+  opacity: ${({completed}) => completed ? `0.7` : `1`};
   background-color: ${({someColor}: {someColor: Color}) =>
     colorToHtmlColor(someColor)};
 `
@@ -357,7 +365,7 @@ function createGroup(color: Color, positions: Position[] = []): Group {
 function getGroup(groups: Groups, position: Position): Group {
   return Object.entries(groups).find(([, group]) =>
     group.positions.some(({x, y}) => position.x === x && position.y === y)
-  )[1]
+  )?.[1]
 }
 
 function getNeighborPositions(position: Position): Position[] {
