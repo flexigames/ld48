@@ -18,6 +18,14 @@ export function canBePlaced(floor: Floor, tile: Tile): boolean {
   return true
 }
 
+export function placeTile(floors: Floor[], tile: Tile, y: number): Floor[] {
+  return floors
+    .map((floor, secondIndex) =>
+      secondIndex === y ? placeOnFloor(floor, tile) : floor
+    )
+    .map(resetSize)
+}
+
 // mutates
 export function resetSize(floor: Floor): Floor {
   floor.segments = floor.segments.map((segment) => ({
@@ -33,7 +41,7 @@ export function cloneFloor(floor: Floor): Floor {
   return newFloor
 }
 
-export function place(floor: Floor, tile: Tile): Floor {
+export function placeOnFloor(floor: Floor, tile: Tile): Floor {
   const newFloor = cloneFloor(floor)
   if (!canBePlaced(floor, tile)) return newFloor
 

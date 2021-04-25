@@ -5,7 +5,8 @@ import {Floor, Segment, Tile} from './types'
 import {
   canBePlaced,
   createFloor,
-  place,
+  placeOnFloor,
+  placeTile,
   resetSize,
   wasJustCompleted
 } from './floor'
@@ -80,11 +81,7 @@ export default function App() {
 
     if (!canBePlaced(selectedFloor, rotatedTile)) return
 
-    const newFloors = floors
-      .map((floor, secondIndex) =>
-        secondIndex === y ? place(selectedFloor, rotatedTile) : floor
-      )
-      .map(resetSize)
+    const newFloors = placeTile(floors, rotatedTile, y)
 
     for (const floor of newFloors) {
       if (wasJustCompleted(floor)) {
