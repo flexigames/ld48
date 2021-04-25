@@ -1,8 +1,8 @@
 import React, {useState, useEffect} from 'react'
 import styled from 'styled-components'
-import {keyBy, sample, times} from 'lodash'
+import {keyBy, sample, times, reverse} from 'lodash'
 
-const segmentCount = 6;
+const segmentCount = 4;
 
 export default function App() {
   const [currentTile, setCurrentTile] = useState<TileData>()
@@ -270,8 +270,8 @@ function calculateGroups(floors: FloorData[]) {
 
   const groups: Record<number, Group> = {}
 
-  for (let y in grid) {
-    for (let x in grid[y]) {
+  for (let y = grid.length - 1; y >=0; y--) {
+    for (let x = grid[y].length - 1; x >= 0; x--) {
       if (!grid[y][x].color) continue;
       if (grid[y][x].group) continue;
 
@@ -279,8 +279,8 @@ function calculateGroups(floors: FloorData[]) {
       groups[currentGroup] = {
         id: currentGroup,
         position: {
-          x: Number(x),
-          y: Number(y)
+          x,
+          y
         },
         color: grid[y][x].color,
         count: 0
@@ -289,10 +289,9 @@ function calculateGroups(floors: FloorData[]) {
     
       const cellColor = grid[y][x].color
     
-      setGroupForSameNeighbors(cellColor, currentGroup, Number(x), Number(y))
+      setGroupForSameNeighbors(cellColor, currentGroup, x, y)
     }
   }
-
 
   return Object.values(groups)
 
