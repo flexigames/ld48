@@ -102,6 +102,8 @@ export default function App() {
 
     updateScore(oldGroupIds)
 
+    updateGroupCompletedState(floors, groups)
+
     for (const group of Object.values(groups)) {
       const sizeTextPosition = getSizeTextPosition(group)
       const floor = newFloors[sizeTextPosition.y]
@@ -120,6 +122,17 @@ export default function App() {
     for (const group of Object.values(groups)) {
       if (!oldGroupIds.includes(String(group.id)))
         setScore((score) => score + group.positions.length)
+    }
+  }
+
+  function updateGroupCompletedState(floors: Floor[], groups: Groups) {
+    for (const group of Object.values(groups)) {
+      if (group.completedAtMove) continue
+
+      if (group.positions.every(position => hasNoEmptyNeighbours(floors, position))) {
+        console.log('complete at move ' + currentMove)
+        group.completedAtMove = currentMove
+      }
     }
   }
 
@@ -368,6 +381,15 @@ function createGroupsForNewSegments(
 function getSizeTextPosition(group: Group): Position {
   return group.positions.reduce((bestSoFar, current) =>
     current.y >= bestSoFar.y ? current : bestSoFar
+  )
+}
+
+function hasNoEmptyNeighbours(floors: Floor[], position: Position) {
+  return (
+    getNeighborPositions(position)
+      .map(neighborPosition => getSegment(floors, neighborPosition))
+      .filter(segment => segment)
+      .every(neighbor => neighbor?.color)
   )
 }
 
