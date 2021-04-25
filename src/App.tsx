@@ -98,7 +98,7 @@ export default function App() {
       mergeGroups(newFloors, groups, {x, y})
     }
 
-    // checkChallenge(groups)
+    checkChallenge(Object.values(groups))
 
     updateScore(oldGroupIds)
 
@@ -129,28 +129,32 @@ export default function App() {
     for (const group of Object.values(groups)) {
       if (group.completedAtMove) continue
 
-      if (group.positions.every(position => hasNoEmptyNeighbours(floors, position))) {
+      if (
+        group.positions.every((position) =>
+          hasNoEmptyNeighbours(floors, position)
+        )
+      ) {
         console.log('complete at move ' + currentMove)
         group.completedAtMove = currentMove
       }
     }
   }
 
-  // function checkChallenge(groups: Group[]) {
-  //   const relevantGroups = groups.filter(
-  //     ({completedAtMove}) => !completedAtMove || completedAtMove === currentMove
-  //   )
-  //   for (const relevantGroup of relevantGroups) {
-  //     if (
-  //       relevantGroup.color === challenge.color &&
-  //       relevantGroup.count >= challenge.size
-  //     ) {
-  //       setChallenge(generateChallenge())
-  //       setScore((score) => score + challenge.reward)
-  //       return
-  //     }
-  //   }
-  // }
+  function checkChallenge(groups: Group[]) {
+    const relevantGroups = groups.filter(
+      ({completedAtMove}) => !completedAtMove || completedAtMove === currentMove
+    )
+    for (const relevantGroup of relevantGroups) {
+      if (
+        relevantGroup.color === challenge.color &&
+        relevantGroup.positions.length >= challenge.size
+      ) {
+        setChallenge(generateChallenge())
+        setScore((score) => score + challenge.reward)
+        return
+      }
+    }
+  }
 }
 
 type ChallengeData = {
@@ -385,12 +389,10 @@ function getSizeTextPosition(group: Group): Position {
 }
 
 function hasNoEmptyNeighbours(floors: Floor[], position: Position) {
-  return (
-    getNeighborPositions(position)
-      .map(neighborPosition => getSegment(floors, neighborPosition))
-      .filter(segment => segment)
-      .every(neighbor => neighbor?.color)
-  )
+  return getNeighborPositions(position)
+    .map((neighborPosition) => getSegment(floors, neighborPosition))
+    .filter((segment) => segment)
+    .every((neighbor) => neighbor?.color)
 }
 
 // window.addEventListener('beforeunload', function (e) {
