@@ -1,6 +1,6 @@
 import React, {useState} from 'react'
 import styled from 'styled-components'
-import {maxBy, sample, times} from 'lodash'
+import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
@@ -46,23 +46,30 @@ export default function App() {
         ))}
       </Column>
       <Tiles>
-        <Challenge {...challenge} />
+        {movesLeft > 0 && <Challenge {...challenge} />}
         <Score>{score}</Score>
-        {movesLeft} moves left
-        {tiles.map((tileData, index) => (
-          <TileView
-            key={index}
-            onClick={setCurrentTile}
-            data={tileData}
-            selected={currentTile === tileData}
-          />
-        ))}
+        {movesLeft == 0 ? (
+          'game over'
+        ) : (
+          <>
+            {movesLeft} moves left
+            {tiles.map((tileData, index) => (
+              <TileView
+                key={index}
+                onClick={setCurrentTile}
+                data={tileData}
+                selected={currentTile === tileData}
+              />
+            ))}
+          </>
+        )}
       </Tiles>
     </Main>
   )
 
   function onHover(floor: Floor, offset: number) {
     if (!currentTile) return
+    if (movesLeft <= 0) return
 
     for (const floor of floors) {
       floor.tilePreview = null
@@ -74,6 +81,7 @@ export default function App() {
 
   function onPlace(y: number, selectedFloor: Floor) {
     if (!currentTile) return
+    if (movesLeft <= 0) return
 
     const rotatedTile = cloneRotated(currentTile)
 
@@ -167,8 +175,9 @@ type ChallengeData = {
 }
 
 const ChallengeText = styled.div`
-  width: 500px;
+  width: 300px;
   text-align: center;
+  font-size: 1.5rem;
 `
 
 function generateChallenge() {
@@ -181,12 +190,12 @@ function generateChallenge() {
     (group) => group.positions.length
   )
 
-  const size = sample(times(5)) + 5 + (sampledGroup?.positions?.length ?? 0)
+  const size = random(5) + 5 + (sampledGroup?.positions?.length ?? 0)
 
   return {
     color: color,
     size,
-    reward: size
+    reward: size + random(3)
   }
 }
 
@@ -233,7 +242,7 @@ function TileView({data, onClick, selected}: TileProps) {
   return (
     <SegmentContainer onClick={() => onClick?.(data)} selected={selected}>
       {data.segments.map(({color}, index) => (
-        <ColorSquare key={index} someColor={color} />
+        <ColorSquare small key={index} someColor={color} />
       ))}
     </SegmentContainer>
   )
@@ -265,11 +274,12 @@ enum Color {
 interface ColorSquareProps {
   someColor: Color
   completed?: boolean
+  small?: boolean
 }
 
 const ColorSquare = styled.div<ColorSquareProps>`
-  width: 100px;
-  height: 100px;
+  width: ${({small}) => (small ? '50px' : '100px')};
+  height: ${({small}) => (small ? '50px' : '100px')};
   margin: 2px;
   box-sizing: border-box;
   border-radius: 2px;
@@ -318,16 +328,17 @@ type Group = {
 
 const Tiles = styled(Column)`
   position: fixed;
-  right: -50px;
-  bottom: -100px;
-  transform: scale(0.5);
+  right: 32px;
+  bottom: 32px;
+  width: 300px;
   display: flex;
+  font-size: 2.5rem;
   align-items: center;
 `
 
 const Score = styled.div`
   margin-bottom: 16px;
-  font-size: 200px;
+  font-size: 7rem;
 `
 
 function getSegment(floors: Floor[], position: Position) {
