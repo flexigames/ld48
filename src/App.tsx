@@ -15,6 +15,8 @@ export default function App() {
 
   const [score, setScore] = useState(0)
 
+  const [movesLeft, setMovesLeft] = useState(30)
+
   const [floors, setFloors] = useState([
     createFloor(),
     createFloor(),
@@ -46,6 +48,7 @@ export default function App() {
       <Tiles>
         <Challenge {...challenge} />
         <Score>{score}</Score>
+        {movesLeft} moves left
         {tiles.map((tileData, index) => (
           <TileView
             key={index}
@@ -75,6 +78,8 @@ export default function App() {
     const rotatedTile = cloneRotated(currentTile)
 
     if (!canBePlaced(selectedFloor, rotatedTile)) return
+
+    setMovesLeft((moves) => moves - 1)
 
     const newFloors = placeTile(floors, rotatedTile, y)
 
@@ -148,7 +153,7 @@ export default function App() {
         relevantGroup.positions.length >= challenge.size
       ) {
         setChallenge(generateChallenge())
-        setScore((score) => score + challenge.reward)
+        setMovesLeft((moves) => moves + challenge.reward)
         return
       }
     }
@@ -176,10 +181,12 @@ function generateChallenge() {
     (group) => group.positions.length
   )
 
+  const size = sample(times(5)) + 5 + (sampledGroup?.positions?.length ?? 0)
+
   return {
     color: color,
-    size: sample(times(5)) + 5 + (sampledGroup?.positions?.length ?? 0),
-    reward: 50
+    size,
+    reward: size
   }
 }
 
@@ -234,7 +241,7 @@ function TileView({data, onClick, selected}: TileProps) {
 
 function Challenge({color, size, reward}: ChallengeData) {
   return (
-    <ChallengeText>{`Create a ${Color[color]} Group of Size ${size} (+${reward})`}</ChallengeText>
+    <ChallengeText>{`Create a ${Color[color]} Group of Size ${size} (+${reward} moves)`}</ChallengeText>
   )
 }
 
