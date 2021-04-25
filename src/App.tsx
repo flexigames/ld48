@@ -82,7 +82,7 @@ export default function App() {
         <strong>highscore</strong>
         {highscores.map(({name, score}, index) => (
           <div key={index}>
-            {name}: {score}
+            {name ?? 'anon'}: {score}
           </div>
         ))}
       </Highscores>
