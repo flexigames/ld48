@@ -1,10 +1,11 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import styled from 'styled-components'
 import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
+import {addHighscore, getHighscores} from './firebase'
 
 type Groups = Record<number, Group>
 
@@ -29,6 +30,16 @@ export default function App() {
   const [currentMove, setCurentMove] = useState<number>(0)
 
   const [challenge, setChallenge] = useState<ChallengeData>(generateChallenge)
+
+  const [highscores, setHighscores] = useState<{score: number}[]>([])
+
+  useEffect(() => {
+    getHighscores().then(setHighscores)
+  })
+
+  useEffect(() => {
+    if (movesLeft === 0) addHighscore(score)
+  }, [movesLeft])
 
   return (
     <Main>
@@ -64,6 +75,12 @@ export default function App() {
           </>
         )}
       </Tiles>
+      <Highscores>
+        <strong>highscore</strong>
+        {highscores.map((highscore, index) => (
+          <div key={index}>{highscore.score}</div>
+        ))}
+      </Highscores>
     </Main>
   )
 
@@ -429,6 +446,16 @@ function hasNoEmptyNeighbours(floors: Floor[], position: Position) {
 function findUncompletedGroups(groups: Groups) {
   return Object.values(groups).filter(({completedAtMove}) => !completedAtMove)
 }
+
+const Highscores = styled.div`
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  font-size: 1rem;
+
+  display: flex;
+  flex-direction: column;
+`
 
 // window.addEventListener('beforeunload', function (e) {
 //   e.preventDefault()
