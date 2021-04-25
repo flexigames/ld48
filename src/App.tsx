@@ -1,15 +1,8 @@
 import React, {useState} from 'react'
 import styled from 'styled-components'
-import {sample, times} from 'lodash'
+import {maxBy, sample, times} from 'lodash'
 import {Floor, Segment, Tile} from './types'
-import {
-  canBePlaced,
-  createFloor,
-  placeOnFloor,
-  placeTile,
-  resetSize,
-  wasJustCompleted
-} from './floor'
+import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
 
@@ -174,9 +167,18 @@ const ChallengeText = styled.div`
 `
 
 function generateChallenge() {
+  const color = sample([Color.Red, Color.Yellow, Color.Green])
+
+  const uncompletedGroups = findUncompletedGroups(groups)
+
+  const sampledGroup = maxBy(
+    uncompletedGroups.filter((group) => group.color === color),
+    (group) => group.positions.length
+  )
+
   return {
-    color: sample([Color.Red, Color.Yellow, Color.Green]),
-    size: sample(times(10)) + 5,
+    color: color,
+    size: sample(times(5)) + 5 + (sampledGroup?.positions?.length ?? 0),
     reward: 50
   }
 }
@@ -255,7 +257,7 @@ enum Color {
 
 interface ColorSquareProps {
   someColor: Color
-  completed: boolean
+  completed?: boolean
 }
 
 const ColorSquare = styled.div<ColorSquareProps>`
@@ -267,7 +269,7 @@ const ColorSquare = styled.div<ColorSquareProps>`
   align-items: center;
   justify-content: center;
   display: flex;
-  opacity: ${({completed}) => completed ? `0.7` : `1`};
+  opacity: ${({completed}) => (completed ? `0.7` : `1`)};
   background-color: ${({someColor}: {someColor: Color}) =>
     colorToHtmlColor(someColor)};
 `
@@ -404,6 +406,10 @@ function hasNoEmptyNeighbours(floors: Floor[], position: Position) {
     .map((neighborPosition) => getSegment(floors, neighborPosition))
     .filter((segment) => segment)
     .every((neighbor) => neighbor?.color)
+}
+
+function findUncompletedGroups(groups: Groups) {
+  return Object.values(groups).filter(({completedAtMove}) => !completedAtMove)
 }
 
 // window.addEventListener('beforeunload', function (e) {
