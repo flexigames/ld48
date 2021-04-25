@@ -24,6 +24,10 @@ export default function App() {
 
   const [groups, setGroups] = useState<Group[]>()
 
+  const [currentMove, setCurentMove] = useState<number>(0)
+
+  const [challenge, setChallenge] = useState<ChallengeData>(generateChallenge())
+
   return (
     <Main>
       depthscraper
@@ -38,7 +42,7 @@ export default function App() {
         ))}
       </Column>
       <Tiles>
-        {' '}
+        <Challenge {...challenge} />
         <Score>{score}</Score>
         {tiles.map((tileData, index) => (
           <Tile
@@ -80,7 +84,9 @@ export default function App() {
       }
     }
 
-    const newGroups = calculateGroups(newFloors)
+    const newGroups = calculateGroups(newFloors, currentMove)
+
+    checkChallenge(newGroups)
 
     const groupByPosition = keyBy(
       groups,
@@ -111,7 +117,43 @@ export default function App() {
       tiles.map((tile) => (tile === currentTile ? new TileData() : tile))
     )
 
+    setCurentMove((round) => round + 1)
     setCurrentTile(null)
+  }
+
+  function checkChallenge(groups: Group[]) {
+    const relevantGroups = groups.filter(
+      ({completedAtMove}) => !completedAtMove || completedAtMove === currentMove
+    )
+    for (const relevantGroup of relevantGroups) {
+      if (
+        relevantGroup.color === challenge.color &&
+        relevantGroup.count >= challenge.size
+      ) {
+        setChallenge(generateChallenge())
+        setScore((score) => score + challenge.reward)
+        return
+      }
+    }
+  }
+}
+
+type ChallengeData = {
+  color: Color
+  size: number
+  reward: number
+}
+
+const ChallengeText = styled.div`
+  width: 500px;
+  text-align: center;
+`
+
+function generateChallenge() {
+  return {
+    color: sample([Color.Red, Color.Yellow, Color.Green]),
+    size: sample(times(10)) + 5,
+    reward: 50
   }
 }
 
@@ -158,6 +200,12 @@ function Tile({data, onClick, selected}: TileProps) {
         <ColorSquare key={index} someColor={color} />
       ))}
     </SegmentContainer>
+  )
+}
+
+function Challenge({color, size, reward}: ChallengeData) {
+  return (
+    <ChallengeText>{`Create a ${Color[color]} Group of Size ${size} (+${reward})`}</ChallengeText>
   )
 }
 
@@ -247,7 +295,10 @@ class FloorData {
   }
 
   resetSize() {
-    this.segments = this.segments.map((segment) => ({...segment, size: null}))
+    this.segments = this.segments.map((segment) => ({
+      ...segment,
+      size: null
+    }))
     return this
   }
 
@@ -321,9 +372,10 @@ type Group = {
   position: {x: number; y: number}
   color: Color
   count: number
+  completedAtMove?: number
 }
 
-function calculateGroups(floors: FloorData[]) {
+function calculateGroups(floors: FloorData[], currentMove: number) {
   const grid = floors.map((floor) =>
     floor.segments.map(({color}) => ({color, group: null}))
   )
@@ -344,7 +396,8 @@ function calculateGroups(floors: FloorData[]) {
           y
         },
         color: grid[y][x].color,
-        count: 0
+        count: 0,
+        completedAtMove: currentMove // Assume completed, algorithm will reset if it finds empty neighbor
       }
       nextGroup++
 
@@ -371,19 +424,29 @@ function calculateGroups(floors: FloorData[]) {
     if (neighborUp?.color === cellColor) {
       setGroupForSameNeighbors(cellColor, currentGroup, x, y - 1)
     }
-    const neigborDown = grid[y + 1]?.[x]
-    if (neigborDown?.color === cellColor) {
+    const neighborDown = grid[y + 1]?.[x]
+    if (neighborDown?.color === cellColor) {
       setGroupForSameNeighbors(cellColor, currentGroup, x, y + 1)
     }
 
-    const neigborRight = grid[y][x + 1]
-    if (neigborRight?.color === cellColor) {
+    const neighborRight = grid[y][x + 1]
+    if (neighborRight?.color === cellColor) {
       setGroupForSameNeighbors(cellColor, currentGroup, x + 1, y)
     }
 
-    const neigborLeft = grid[y][x - 1]
-    if (neigborLeft?.color === cellColor) {
+    const neighborLeft = grid[y][x - 1]
+    if (neighborLeft?.color === cellColor) {
       setGroupForSameNeighbors(cellColor, currentGroup, x - 1, y)
+    }
+
+    const hasEmptyNeighbor =
+      !neighborUp?.color ||
+      !neighborDown?.color ||
+      !neighborLeft?.color ||
+      !neighborRight?.color
+
+    if (hasEmptyNeighbor) {
+      groups[currentGroup].completedAtMove = undefined
     }
   }
 }
