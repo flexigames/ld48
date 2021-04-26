@@ -21,7 +21,7 @@ export function addHighscore(score: number, name: string) {
 export async function getHighscores(): Promise<Score[]> {
   const snapshot = await database.ref('highscores').get()
   const highscores = Object.values(snapshot.val())
-  return sortBy(highscores, ({score}) => -score).slice(0, 10) as Score[]
+  return sortBy(highscores, ({score}) => -score).slice(0, 9) as Score[]
 }
 
 export type Score = {

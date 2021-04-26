@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import styled, {keyframes, css} from 'styled-components'
 import {flipInX, rubberBand, rollIn, pulse} from 'react-animations'
-import {maxBy, random, sample} from 'lodash'
+import {maxBy, padEnd, padStart, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
@@ -84,7 +84,8 @@ export default function App() {
         <strong>highscore</strong>
         {highscores.map(({name, score}, index) => (
           <div key={index}>
-            {name ?? 'anon'}: {score}
+            {index + 1}. {padEnd(name?.slice(0, 8) ?? 'anon', 10, '.')}
+            {padStart(score + '', 5, '.')}
           </div>
         ))}
       </Highscores>
@@ -541,6 +542,7 @@ const Highscores = styled.div`
   left: 16px;
   top: 16px;
   font-size: 1rem;
+  font-family: monospace;
 
   display: flex;
   flex-direction: column;
