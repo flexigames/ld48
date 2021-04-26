@@ -4,7 +4,7 @@ import {segmentCount} from './const'
 
 export function createFloor(): Floor {
   return {
-    segments: times(segmentCount).map(() => ({color: undefined})),
+    segments: times(segmentCount).map(() => ({color: undefined, size: null})),
     isCompleted: false
   }
 }

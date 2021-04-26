@@ -132,11 +132,11 @@ export default function App() {
 
     updateScore(oldGroupIds)
 
-    updateGroupCompletedState(floors, groups)
+    updateGroupCompletedState(newFloors, groups)
 
     checkChallenge(Object.values(groups))
 
-    updateSizeText(newFloors, groups)
+    updateSizeAndGroupRepresentative(newFloors, groups)
 
     setFloors(newFloors)
 
@@ -175,11 +175,17 @@ export default function App() {
     }
   }
 
-  function updateSizeText(floors: Floor[], groups: Groups) {
+  function updateSizeAndGroupRepresentative(floors: Floor[], groups: Groups) {
     for (const group of Object.values(groups)) {
-      const sizeTextPosition = getSizeTextPosition(group)
-      const floor = floors[sizeTextPosition.y]
-      floor.segments[sizeTextPosition.x].size = group.positions.length
+      for (const position of group.positions) {
+        const floor = floors[position.y]
+        floor.segments[position.x].size = group.positions.length
+        floor.segments[position.x].representative = false
+      }
+
+      const representativePosition = getRepresentativePosition(group)
+      const floor = floors[representativePosition.y]
+      floor.segments[representativePosition.x].representative = true
     }
   }
 
@@ -268,17 +274,20 @@ function FloorView({floorData, onClick, onHover, groups, y}: FloorProps) {
       hasIssue={placingIssue}
       onClick={() => onClick?.(floorData)}
     >
-      {floorData.segments.map(({color, size}, x) => (
-        <ColorSquare
-          key={x}
-          onMouseEnter={() => onHover(x)}
-          someColor={color}
-          previewColor={previewTile[x]?.color}
-          completed={Boolean(getGroup(groups, {x, y})?.completedAtMove)}
-        >
-          {size ?? ''}
-        </ColorSquare>
-      ))}
+      {floorData.segments.map(({color, size, representative}, x) => {
+        return (
+          <ColorSquare
+            key={x}
+            onMouseEnter={() => onHover(x)}
+            someColor={color}
+            previewColor={previewTile[x]?.color}
+            size={size}
+            completed={Boolean(getGroup(groups, {x, y})?.completedAtMove)}
+          >
+            {(representative && size) || ''}
+          </ColorSquare>
+        )
+      })}
     </SegmentContainer>
   )
 }
@@ -327,6 +336,7 @@ enum Color {
 
 interface ColorSquareProps {
   someColor: Color
+  size?: number
   previewColor?: Color
   completed?: boolean
   small?: boolean
@@ -335,7 +345,7 @@ interface ColorSquareProps {
 }
 
 function ColorSquare(props: ColorSquareProps) {
-  const showAnimation = useAnimationTrigger(props.someColor, 700)
+  const showAnimation = useAnimationTrigger(props.size, 700)
 
   return (
     <ColorSquareContainer
@@ -490,7 +500,7 @@ function createGroupsForNewSegments(
   }
 }
 
-function getSizeTextPosition(group: Group): Position {
+function getRepresentativePosition(group: Group): Position {
   return group.positions.reduce((bestSoFar, current) =>
     current.y >= bestSoFar.y ? current : bestSoFar
   )

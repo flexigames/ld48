@@ -1,6 +1,7 @@
 export type Segment = {
   color?: Color
   size?: number
+  representative?: boolean
 }
 
 export type Floor = {
