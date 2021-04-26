@@ -68,8 +68,8 @@ export default function App() {
         ))}
       </Column>
       <Tiles>
-        {movesLeft > 0 && <Challenge {...challenge} />}
         <ScoreView>{score}</ScoreView>
+        {movesLeft > 0 && <Challenge {...challenge} />}
         {gameover ? 'game over' : <>{movesLeft} moves left</>}
         {tiles.map((tileData, index) => (
           <TileView
@@ -212,30 +212,6 @@ type ChallengeData = {
   reward: number
 }
 
-function ChallengeText({text}) {
-  const showAnimation = useAnimationTrigger(text)
-
-  return (
-    <ChallengeTextContainer showAnimation={showAnimation}>
-      {text}
-    </ChallengeTextContainer>
-  )
-}
-
-const ChallengeTextContainer = styled.div`
-  width: 300px;
-  text-align: center;
-  font-size: 1.5rem;
-  ${({showAnimation}) =>
-    showAnimation
-      ? css`
-          animation: 1s ${keyframes`${rollIn}`};
-        `
-      : css`
-          animation: none;
-        `}
-`
-
 function generateChallenge() {
   const color = sample([Color.Red, Color.Yellow, Color.Green])
 
@@ -334,12 +310,42 @@ function TileView({data, onClick, selected}: TileProps) {
 }
 
 function Challenge({color, size, reward}: ChallengeData) {
+  const showAnimation = useAnimationTrigger(size + reward)
+
   return (
-    <ChallengeText
-      text={`Create a ${Color[color]} Group of Size ${size} (+${reward} moves)`}
-    />
+    <ChallengeContainer showAnimation={showAnimation}>
+      <ColorSquare small size={size} someColor={color}>
+        {size}
+      </ColorSquare>
+      <ChallengeMovesText>{` for +${reward} moves`}</ChallengeMovesText>
+    </ChallengeContainer>
   )
 }
+
+const ChallengeContainer = styled.div`
+  border-radius: 12px;
+  background-color: #efeee2;
+  padding: 16px 24px;
+  margin-bottom: 32px;
+  box-shadow: 0px 6px 20px -6px #a3a3a3;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  ${({showAnimation}) =>
+    showAnimation
+      ? css`
+          animation: 1s ${keyframes`${rollIn}`};
+        `
+      : css`
+          animation: none;
+        `}
+`
+
+const ChallengeMovesText = styled.div`
+  margin-left: 8px;
+`
 
 enum Color {
   Red = 1,
@@ -437,7 +443,7 @@ const Tiles = styled(Column)`
 `
 
 const ScoreView = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: 48px;
   font-size: 7rem;
 `
 
