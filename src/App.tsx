@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
-import styled, {keyframes} from 'styled-components'
-import {flipInX} from 'react-animations'
+import styled, {keyframes, css} from 'styled-components'
+import {flipInX, rubberBand} from 'react-animations'
 import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
@@ -68,7 +68,7 @@ export default function App() {
       </Column>
       <Tiles>
         {movesLeft > 0 && <Challenge {...challenge} />}
-        <Score>{score}</Score>
+        <ScoreView>{score}</ScoreView>
         {gameover ? 'game over' : <>{movesLeft} moves left</>}
         {tiles.map((tileData, index) => (
           <TileView
@@ -253,7 +253,8 @@ function FloorView({floorData, onClick, onHover, groups, y}: FloorProps) {
         <ColorSquare
           key={x}
           onMouseEnter={() => onHover(x)}
-          someColor={previewTile[x]?.color ?? color}
+          someColor={color}
+          previewColor={previewTile[x]?.color}
           completed={Boolean(getGroup(groups, {x, y})?.completedAtMove)}
         >
           {size ?? ''}
@@ -305,11 +306,35 @@ enum Color {
 
 interface ColorSquareProps {
   someColor: Color
+  previewColor?: Color
   completed?: boolean
   small?: boolean
+  children?: any
+  onMouseEnter?: () => void
 }
 
-const ColorSquare = styled.div<ColorSquareProps>`
+function ColorSquare(props: ColorSquareProps) {
+  const [currentColor, setCurrentColor] = useState(props.someColor)
+  const [showAnimation, setShowAnimation] = useState(false)
+
+  useEffect(() => {
+    if (!props.small && currentColor !== props.someColor) {
+      setCurrentColor(props.someColor)
+      setShowAnimation(true)
+      setTimeout(() => setShowAnimation(false), 700)
+    }
+  }, [props.someColor])
+
+  return (
+    <ColorSquareContainer
+      showAnimation={showAnimation}
+      resultingColor={props.previewColor || props.someColor}
+      {...props}
+    />
+  )
+}
+
+const ColorSquareContainer = styled.div<ColorSquareProps>`
   width: ${({small}) => (small ? '50px' : '100px')};
   height: ${({small}) => (small ? '50px' : '100px')};
   margin: 2px;
@@ -319,8 +344,16 @@ const ColorSquare = styled.div<ColorSquareProps>`
   justify-content: center;
   display: flex;
   opacity: ${({completed}) => (completed ? `0.7` : `1`)};
-  background-color: ${({someColor}: {someColor: Color}) =>
-    colorToHtmlColor(someColor)};
+  background-color: ${({resultingColor}: {resultingColor: Color}) =>
+    colorToHtmlColor(resultingColor)};
+  ${({showAnimation}) =>
+    showAnimation
+      ? css`
+          animation: 0.7s ${keyframes`${rubberBand}`};
+        `
+      : css`
+          animation: none;
+        `}
 `
 
 function colorToHtmlColor(color: Color) {
@@ -368,7 +401,7 @@ const Tiles = styled(Column)`
   align-items: center;
 `
 
-const Score = styled.div`
+const ScoreView = styled.div`
   margin-bottom: 16px;
   font-size: 7rem;
 `
