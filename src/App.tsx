@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import styled, {keyframes, css} from 'styled-components'
-import {flipInX, rubberBand, rollIn, shake} from 'react-animations'
+import {flipInX, rubberBand, rollIn, pulse} from 'react-animations'
 import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
@@ -303,18 +303,20 @@ const SegmentContainer = styled.div<{selected?: boolean; hasIssue?: boolean}>`
   gap: 6px;
   border-radius: 4px;
   ${({hasIssue}) => `opacity: ${hasIssue ? '0.5' : '1'};`}
-  ${({selected}) => `border: 4px solid ${selected ? 'black' : 'transparent'};`}
-  animation: 1s ${keyframes`${flipInX}`};
+  ${({selected}) =>
+    `border: 4px solid ${
+      selected ? 'black' : 'transparent'
+    };`} /* animation: 1s ${keyframes`${flipInX}`}; */
 `
 
 const FloorContainer = styled(SegmentContainer)`
   ${({showAnimation}) =>
     showAnimation
       ? css`
-          animation: 1s ${keyframes`${shake}`};
+          animation: 1s ${keyframes`${pulse}`}, 1s ${keyframes`${flipInX}`};
         `
       : css`
-          animation: none;
+          animation: 1s ${keyframes`${flipInX}`};
         `}
 `
 
