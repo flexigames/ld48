@@ -57,6 +57,6 @@ export function placeOnFloor(floor: Floor, tile: Tile): Floor {
 export function wasJustCompleted(floor: Floor): boolean {
   if (floor?.isCompleted) return false
 
-  floor.isCompleted = true
-  return floor.segments.every((segment) => segment.color)
+  floor.isCompleted = floor.segments.every((segment) => segment.color)
+  return floor.isCompleted
 }

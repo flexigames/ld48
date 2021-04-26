@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react'
 import styled, {keyframes, css} from 'styled-components'
-import {flipInX, rubberBand, rollIn} from 'react-animations'
+import {flipInX, rubberBand, rollIn, shake} from 'react-animations'
 import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
@@ -269,8 +269,11 @@ function FloorView({floorData, onClick, onHover, groups, y}: FloorProps) {
   const placingIssue =
     floorData?.tilePreview && !canBePlaced(floorData, floorData?.tilePreview)
 
+  const showAnimation = useAnimationTrigger(floorData.isCompleted)
+
   return (
-    <SegmentContainer
+    <FloorContainer
+      showAnimation={showAnimation}
       hasIssue={placingIssue}
       onClick={() => onClick?.(floorData)}
     >
@@ -288,9 +291,32 @@ function FloorView({floorData, onClick, onHover, groups, y}: FloorProps) {
           </ColorSquare>
         )
       })}
-    </SegmentContainer>
+    </FloorContainer>
   )
 }
+
+const SegmentContainer = styled.div<{selected?: boolean; hasIssue?: boolean}>`
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+  align-items: center;
+  gap: 6px;
+  border-radius: 4px;
+  ${({hasIssue}) => `opacity: ${hasIssue ? '0.5' : '1'};`}
+  ${({selected}) => `border: 4px solid ${selected ? 'black' : 'transparent'};`}
+  animation: 1s ${keyframes`${flipInX}`};
+`
+
+const FloorContainer = styled(SegmentContainer)`
+  ${({showAnimation}) =>
+    showAnimation
+      ? css`
+          animation: 1s ${keyframes`${shake}`};
+        `
+      : css`
+          animation: none;
+        `}
+`
 
 type TileProps = {
   data: Tile
@@ -315,18 +341,6 @@ function Challenge({color, size, reward}: ChallengeData) {
     />
   )
 }
-
-const SegmentContainer = styled.div<{selected?: boolean; hasIssue?: boolean}>`
-  display: flex;
-  flex-direction: row;
-  text-align: center;
-  align-items: center;
-  gap: 6px;
-  border-radius: 4px;
-  ${({hasIssue}) => `opacity: ${hasIssue ? '0.5' : '1'};`}
-  ${({selected}) => `border: 4px solid ${selected ? 'black' : 'transparent'};`}
-  animation: 1s ${keyframes`${flipInX}`};
-`
 
 enum Color {
   Red = 1,
