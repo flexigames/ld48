@@ -36,12 +36,12 @@ export function fillRandomly(tile: Tile): Tile {
   return tile
 }
 
-export function cloneRotated(tile: Tile): Tile {
+export function cloneRotated(tile: Tile, offset?: number): Tile {
   const segmentCopy = [...tile.segments]
   const newTile = createTile()
   for (let i = 0; i < segmentCount; i++) {
     newTile.segments[i] =
-      segmentCopy[(i + segmentCount - tile.offset) % segmentCount]
+      segmentCopy[(i + segmentCount - (offset ?? tile.offset)) % segmentCount]
   }
   return newTile
 }

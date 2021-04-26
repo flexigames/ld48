@@ -33,16 +33,22 @@ export default function App() {
 
   const [highscores, setHighscores] = useState<Score[]>([])
 
+  const [gameover, setGameover] = useState(false)
+
   useEffect(() => {
     getHighscores().then(setHighscores)
   })
 
   useEffect(() => {
-    if (movesLeft === 0) {
+    if (movesLeft === 0) setGameover(true)
+  }, [movesLeft])
+
+  useEffect(() => {
+    if (gameover) {
       const name = prompt(`what is your name?`).slice(0, 10)
       addHighscore(score, name)
     }
-  }, [movesLeft])
+  }, [gameover])
 
   return (
     <Main>
@@ -62,21 +68,15 @@ export default function App() {
       <Tiles>
         {movesLeft > 0 && <Challenge {...challenge} />}
         <Score>{score}</Score>
-        {movesLeft == 0 ? (
-          'game over'
-        ) : (
-          <>
-            {movesLeft} moves left
-            {tiles.map((tileData, index) => (
-              <TileView
-                key={index}
-                onClick={setCurrentTile}
-                data={tileData}
-                selected={currentTile === tileData}
-              />
-            ))}
-          </>
-        )}
+        {gameover ? 'game over' : <>{movesLeft} moves left</>}
+        {tiles.map((tileData, index) => (
+          <TileView
+            key={index}
+            onClick={setCurrentTile}
+            data={tileData}
+            selected={currentTile === tileData}
+          />
+        ))}
       </Tiles>
       <Highscores>
         <strong>highscore</strong>
@@ -138,7 +138,15 @@ export default function App() {
 
     setFloors(newFloors)
 
-    setTiles(tiles.map((tile) => (tile === currentTile ? createTile() : tile)))
+    const newTiles = tiles.map((tile) =>
+      tile === currentTile ? createTile() : tile
+    )
+
+    setTiles(newTiles)
+
+    if (!isPlacementPossible(newFloors, newTiles)) {
+      setGameover(true)
+    }
 
     setCurentMove((round) => round + 1)
     setCurrentTile(null)
@@ -461,6 +469,22 @@ const Highscores = styled.div`
   display: flex;
   flex-direction: column;
 `
+
+function isPlacementPossible(floors: Floor[], tiles: Tile[]) {
+  const floorsWithEmptySegments = floors.filter((floor) =>
+    floor.segments.some((segment) => !segment.color)
+  )
+
+  for (const tile of tiles) {
+    for (const floor of floorsWithEmptySegments) {
+      for (let offset = 0; offset < segmentCount; offset++) {
+        if (canBePlaced(floor, cloneRotated(tile, offset))) return true
+      }
+    }
+  }
+
+  return false
+}
 
 // window.addEventListener('beforeunload', function (e) {
 //   e.preventDefault()
