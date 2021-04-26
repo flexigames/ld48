@@ -1,12 +1,13 @@
 import React, {useEffect, useState} from 'react'
 import styled, {keyframes, css} from 'styled-components'
-import {flipInX, rubberBand} from 'react-animations'
+import {flipInX, rubberBand, rollIn} from 'react-animations'
 import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
 import {addHighscore, getHighscores, Score} from './firebase'
+import {useAnimationTrigger} from './animation'
 
 type Groups = Record<number, Group>
 
@@ -205,10 +206,28 @@ type ChallengeData = {
   reward: number
 }
 
-const ChallengeText = styled.div`
+function ChallengeText({text}) {
+  const showAnimation = useAnimationTrigger(text)
+
+  return (
+    <ChallengeTextContainer showAnimation={showAnimation}>
+      {text}
+    </ChallengeTextContainer>
+  )
+}
+
+const ChallengeTextContainer = styled.div`
   width: 300px;
   text-align: center;
   font-size: 1.5rem;
+  ${({showAnimation}) =>
+    showAnimation
+      ? css`
+          animation: 1s ${keyframes`${rollIn}`};
+        `
+      : css`
+          animation: none;
+        `}
 `
 
 function generateChallenge() {
@@ -282,7 +301,9 @@ function TileView({data, onClick, selected}: TileProps) {
 
 function Challenge({color, size, reward}: ChallengeData) {
   return (
-    <ChallengeText>{`Create a ${Color[color]} Group of Size ${size} (+${reward} moves)`}</ChallengeText>
+    <ChallengeText
+      text={`Create a ${Color[color]} Group of Size ${size} (+${reward} moves)`}
+    />
   )
 }
 
@@ -314,20 +335,11 @@ interface ColorSquareProps {
 }
 
 function ColorSquare(props: ColorSquareProps) {
-  const [currentColor, setCurrentColor] = useState(props.someColor)
-  const [showAnimation, setShowAnimation] = useState(false)
-
-  useEffect(() => {
-    if (!props.small && currentColor !== props.someColor) {
-      setCurrentColor(props.someColor)
-      setShowAnimation(true)
-      setTimeout(() => setShowAnimation(false), 700)
-    }
-  }, [props.someColor])
+  const showAnimation = useAnimationTrigger(props.someColor, 700)
 
   return (
     <ColorSquareContainer
-      showAnimation={showAnimation}
+      showAnimation={!props.small && showAnimation}
       resultingColor={props.previewColor || props.someColor}
       {...props}
     />
