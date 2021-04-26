@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react'
-import styled from 'styled-components'
+import styled, {keyframes} from 'styled-components'
+import {flipInX} from 'react-animations'
 import {maxBy, random, sample} from 'lodash'
 import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
@@ -293,6 +294,7 @@ const SegmentContainer = styled.div<{selected?: boolean; hasIssue?: boolean}>`
   border-radius: 4px;
   ${({hasIssue}) => `opacity: ${hasIssue ? '0.5' : '1'};`}
   ${({selected}) => `border: 4px solid ${selected ? 'black' : 'transparent'};`}
+  animation: 1s ${keyframes`${flipInX}`};
 `
 
 enum Color {
