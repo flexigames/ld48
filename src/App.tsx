@@ -54,41 +54,48 @@ export default function App() {
 
   return (
     <Main>
-      depthscraper
-      <Column>
-        {floors.map((floor, index) => (
-          <FloorView
-            key={index}
-            floorData={floor}
-            groups={groups}
-            y={index}
-            onClick={(floor) => onPlace(index, floor)}
-            onHover={(index) => onHover(floor, index)}
-          />
-        ))}
-      </Column>
-      <Tiles>
-        <ScoreView>{score}</ScoreView>
-        {movesLeft > 0 && <Challenge {...challenge} />}
-        {gameover ? 'game over' : <>{movesLeft} moves left</>}
-        {tiles.map((tileData, index) => (
-          <TileView
-            key={index}
-            onClick={setCurrentTile}
-            data={tileData}
-            selected={currentTile === tileData}
-          />
-        ))}
-      </Tiles>
-      <Highscores>
-        <strong>highscore</strong>
-        {highscores.map(({name, score}, index) => (
-          <div key={index}>
-            {index + 1}. {padEnd(name?.slice(0, 8) ?? 'anon', 10, '.')}
-            {padStart(score + '', 5, '.')}
-          </div>
-        ))}
-      </Highscores>
+      <GameContainer>
+        <Title>depthscraper</Title>
+        <Column>
+          {floors.map((floor, index) => (
+            <FloorView
+              key={index}
+              floorData={floor}
+              groups={groups}
+              y={index}
+              onClick={(floor) => onPlace(index, floor)}
+              onHover={(index) => onHover(floor, index)}
+            />
+          ))}
+        </Column>
+      </GameContainer>
+      <MenuContainer>
+        <Tiles>
+          <ScoreView>{score}</ScoreView>
+          <Highscores>
+            <strong>highscore</strong>
+            {highscores.map(({name, score}, index) => (
+              <div key={index}>
+                {index + 1}. {padEnd(name?.slice(0, 8) ?? 'anon', 10, '.')}
+                {padStart(score + '', 5, '.')}
+              </div>
+            ))}
+          </Highscores>
+          <Spacer />
+          <Status>
+            {gameover ? 'game over' : <>{movesLeft} moves left</>}
+          </Status>
+          {movesLeft > 0 && <Challenge {...challenge} />}
+          {tiles.map((tileData, index) => (
+            <TileView
+              key={index}
+              onClick={setCurrentTile}
+              data={tileData}
+              selected={currentTile === tileData}
+            />
+          ))}
+        </Tiles>
+      </MenuContainer>
     </Main>
   )
 
@@ -206,6 +213,21 @@ export default function App() {
     }
   }
 }
+
+const GameContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+`
+
+const MenuContainer = styled.div`
+  width: 320px;
+`
+
+const Title = styled.div`
+  font-size: 4rem;
+`
 
 type ChallengeData = {
   color: Color
@@ -325,11 +347,10 @@ function Challenge({color, size, reward}: ChallengeData) {
 }
 
 const ChallengeContainer = styled.div`
-  border-radius: 12px;
-  background-color: #efeee2;
-  padding: 16px 24px;
-  margin-bottom: 32px;
-  box-shadow: 0px 6px 20px -6px #a3a3a3;
+  border-radius: 6px;
+  border: 2px solid #272727;
+  padding: 8px 16px;
+  margin-bottom: 16px;
   text-align: center;
   justify-content: center;
   display: flex;
@@ -345,8 +366,17 @@ const ChallengeContainer = styled.div`
         `}
 `
 
+const Spacer = styled.div`
+  flex: 1;
+`
+
 const ChallengeMovesText = styled.div`
   margin-left: 8px;
+`
+
+const Status = styled.div`
+  font-size: 2rem;
+  margin-bottom: 16px;
 `
 
 enum Color {
@@ -413,12 +443,11 @@ const Column = styled.div`
 
 const Main = styled.div`
   display: flex;
-  align-items: center;
   margin: 16px;
-
   color: #2b2b24;
   font-size: 70px;
-  flex-direction: column;
+  flex-direction: row;
+  width: 960px;
   gap: 40px;
 `
 
@@ -436,17 +465,19 @@ type Group = {
 
 const Tiles = styled(Column)`
   position: fixed;
-  right: 32px;
-  bottom: 32px;
-  width: 300px;
+  right: 0px;
+  bottom: 0px;
   display: flex;
   font-size: 2.5rem;
   align-items: center;
+  flex: 1;
+  height: 93%;
+  padding: 32px;
 `
 
 const ScoreView = styled.div`
-  margin-bottom: 48px;
-  font-size: 7rem;
+  margin-bottom: 8px;
+  font-size: 5rem;
 `
 
 function getSegment(floors: Floor[], position: Position) {
@@ -539,12 +570,7 @@ function findUncompletedGroups(groups: Groups) {
 }
 
 const Highscores = styled.div`
-  position: fixed;
-  left: 16px;
-  top: 16px;
   font-size: 1rem;
-  font-family: monospace;
-
   display: flex;
   flex-direction: column;
 `
