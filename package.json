@@ -6,7 +6,7 @@
   "scripts": {
     "start": "parcel index.html",
     "build": "parcel build index.html --public-url '/ld48'",
-    "build-itchio": "parcel build index.html"
+    "build-itchio": "parcel build index.html --public-url '.'"
   },
   "repository": {
     "type": "git",
