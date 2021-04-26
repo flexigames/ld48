@@ -1,0 +1,29 @@
+name: publish
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+  
+    - name: Build
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+    - run: npm install
+    - run: npm run build
+
+    - name: Publish
+      uses: josephbmanley/butler-publish-itchio-action@v1.0.1
+      env:
+            BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+            CHANNEL: web
+            ITCH_GAME: depthscraper
+            ITCH_USER: lexenson
+            PACKAGE: dist
