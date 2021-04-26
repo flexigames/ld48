@@ -281,6 +281,7 @@ const SegmentContainer = styled.div<{selected?: boolean; hasIssue?: boolean}>`
   border-radius: 4px;
   ${({hasIssue}) => `opacity: ${hasIssue ? '0.5' : '1'};`}
   ${({selected}) => `border: 4px solid ${selected ? 'black' : 'transparent'};`}
+  animation: 1s ${keyframes`${flipInX}`};
 `
 
 const FloorContainer = styled(SegmentContainer)`
