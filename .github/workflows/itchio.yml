@@ -1,4 +1,4 @@
-name: publish
+name: publish-itch.io
 
 on:
   push:
