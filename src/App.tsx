@@ -37,9 +37,15 @@ export default function App() {
 
   const [gameover, setGameover] = useState(false)
 
+  const [scoreAddition, setScoreAddition] = useState<number>()
+
   useEffect(() => {
-    getHighscores().then(setHighscores)
-  })
+    const interval = setInterval(() => {
+      getHighscores().then(setHighscores)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (movesLeft === 0) setGameover(true)
@@ -51,6 +57,8 @@ export default function App() {
       addHighscore(score, name)
     }
   }, [gameover])
+
+  console.log('render')
 
   return (
     <Main>
@@ -71,7 +79,7 @@ export default function App() {
       </GameContainer>
       <MenuContainer>
         <Tiles>
-          <ScoreView>{score}</ScoreView>
+          <ScoreDisplay score={score} scoreAddition={scoreAddition} />
           <Highscores>
             <strong>highscore</strong>
             {highscores.map(({name, score}, index) => (
@@ -164,8 +172,11 @@ export default function App() {
 
   function updateScore(oldGroupIds: string[]) {
     for (const group of Object.values(groups)) {
-      if (!oldGroupIds.includes(String(group.id)))
-        setScore((score) => score + group.positions.length)
+      if (!oldGroupIds.includes(String(group.id))) {
+        const scoreAddition = group.positions.length
+        setScore((score) => score + scoreAddition)
+        setScoreAddition(scoreAddition)
+      }
     }
   }
 
@@ -252,6 +263,16 @@ function generateChallenge() {
     size,
     reward: size + random(3)
   }
+}
+
+function ScoreDisplay({scoreAddition, score}) {
+  const showAnimation = useAnimationTrigger(score)
+  return (
+    <ScoreView>
+      {score}
+      {showAnimation && <ScoreAddition>+{scoreAddition}</ScoreAddition>}
+    </ScoreView>
+  )
 }
 
 type FloorProps = {
@@ -478,6 +499,29 @@ const Tiles = styled(Column)`
 const ScoreView = styled.div`
   margin-bottom: 8px;
   font-size: 5rem;
+  position: relative;
+`
+
+const ScoreAddition = styled.div`
+  position: absolute;
+  right: -40px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: rgba(119, 110, 101, 0.9);
+  z-index: 100;
+  animation: move-up 600ms ease-in;
+  animation-fill-mode: both;
+
+  @keyframes move-up {
+    0% {
+      top: 25px;
+      opacity: 1;
+    }
+    100% {
+      top: -50px;
+      opacity: 0;
+    }
+  }
 `
 
 function getSegment(floors: Floor[], position: Position) {
