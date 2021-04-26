@@ -128,11 +128,11 @@ export default function App() {
       mergeGroups(newFloors, groups, {x, y})
     }
 
-    checkChallenge(Object.values(groups))
-
     updateScore(oldGroupIds)
 
     updateGroupCompletedState(floors, groups)
+
+    checkChallenge(Object.values(groups))
 
     updateSizeText(newFloors, groups)
 
