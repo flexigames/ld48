@@ -19,7 +19,7 @@ export default function App() {
 
   const [score, setScore] = useState(0)
 
-  const [movesLeft, setMovesLeft] = useState(30)
+  const [movesLeft, setMovesLeft] = useState(25)
 
   const [floors, setFloors] = useState([
     createFloor(),
@@ -54,12 +54,10 @@ export default function App() {
 
   useEffect(() => {
     if (gameover) {
-      const name = prompt(`what is your name?`).slice(0, 10)
+      const name = (prompt(`what is your name?`) || 'anon').slice(0, 10)
       addHighscore(score, name)
     }
   }, [gameover])
-
-  console.log('render')
 
   return (
     <Main>
@@ -77,6 +75,11 @@ export default function App() {
             />
           ))}
         </Column>
+        {gameover && (
+          <RestartButton onClick={() => location.reload()}>
+            start over
+          </RestartButton>
+        )}
       </GameContainer>
       <MenuContainer>
         <Tiles>
@@ -226,11 +229,20 @@ export default function App() {
   }
 }
 
+const RestartButton = styled.div`
+  font-size: 3rem;
+  cursor: pointer;
+  border: 2px solid #272727;
+  padding: 8px 16px;
+  margin: 16px;
+`
+
 const GameContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: 1;
+  margin-bottom: 64px;
 `
 
 const MenuContainer = styled.div`
@@ -597,7 +609,7 @@ function isPlacementPossible(floors: Floor[], tiles: Tile[]) {
   return false
 }
 
-// window.addEventListener('beforeunload', function (e) {
-//   e.preventDefault()
-//   e.returnValue = 'Are you sure you want to leave?'
-// })
+window.addEventListener('beforeunload', function (e) {
+  e.preventDefault()
+  e.returnValue = 'Are you sure you want to leave?'
+})
