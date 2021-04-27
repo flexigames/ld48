@@ -8,6 +8,7 @@ import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
 import {addHighscore, getHighscores, Score} from './firebase'
 import {useAnimationTrigger} from './animation'
+import ScoreDisplay from './ScoreDisplay' 
 
 type Groups = Record<number, Group>
 
@@ -265,16 +266,6 @@ function generateChallenge() {
   }
 }
 
-function ScoreDisplay({scoreAddition, score}) {
-  const showAnimation = useAnimationTrigger(score)
-  return (
-    <ScoreView>
-      {score}
-      {showAnimation && <ScoreAddition>+{scoreAddition}</ScoreAddition>}
-    </ScoreView>
-  )
-}
-
 type FloorProps = {
   floorData: Floor
   onClick?: (floorData: Floor) => any
@@ -494,34 +485,6 @@ const Tiles = styled(Column)`
   flex: 1;
   height: 93%;
   padding: 32px;
-`
-
-const ScoreView = styled.div`
-  margin-bottom: 8px;
-  font-size: 5rem;
-  position: relative;
-`
-
-const ScoreAddition = styled.div`
-  position: absolute;
-  right: -40px;
-  font-size: 2rem;
-  font-weight: bold;
-  color: rgba(119, 110, 101, 0.9);
-  z-index: 100;
-  animation: move-up 600ms ease-in;
-  animation-fill-mode: both;
-
-  @keyframes move-up {
-    0% {
-      top: 25px;
-      opacity: 1;
-    }
-    100% {
-      top: -50px;
-      opacity: 0;
-    }
-  }
 `
 
 function getSegment(floors: Floor[], position: Position) {
