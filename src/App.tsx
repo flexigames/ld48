@@ -8,7 +8,7 @@ import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
 import {addHighscore, getHighscores, Score} from './firebase'
 import {useAnimationTrigger} from './animation'
-import ScoreDisplay from './ScoreDisplay' 
+import ScoreDisplay from './ScoreDisplay'
 
 type Groups = Record<number, Group>
 
@@ -459,7 +459,6 @@ const Main = styled.div`
   color: #2b2b24;
   font-size: 70px;
   flex-direction: row;
-  width: 960px;
   gap: 40px;
 `
 
