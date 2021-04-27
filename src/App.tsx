@@ -14,6 +14,8 @@ type Groups = Record<number, Group>
 
 const groups: Groups = {}
 
+const playerId = localStorage.getItem('playerid') ?? createPlayerId()
+
 export default function App() {
   const [currentTile, setCurrentTile] = useState<Tile>()
 
@@ -55,7 +57,7 @@ export default function App() {
   useEffect(() => {
     if (gameover) {
       const name = (prompt(`what is your name?`) || 'anon').slice(0, 10)
-      addHighscore(score, name)
+      addHighscore(score, name, playerId)
     }
   }, [gameover])
 
@@ -86,12 +88,31 @@ export default function App() {
           <ScoreDisplay score={score} scoreAddition={scoreAddition} />
           <Highscores>
             <strong>highscore</strong>
-            {highscores.map(({name, score}, index) => (
-              <div key={index}>
-                {index + 1}. {padEnd(name?.slice(0, 8) ?? 'anon', 10, '.')}
-                {padStart(score + '', 5, '.')}
-              </div>
+            {highscores.slice(0, 9).map(({name, score}, index) => (
+              <HighscoreEntry
+                key={index}
+                index={index}
+                name={name}
+                score={score}
+              />
             ))}
+            ...
+            {
+              highscores
+                .slice(9)
+                .map((highscore, index) => {
+                  if (highscore.playerId === playerId) {
+                    return (
+                      <HighscoreEntry
+                        index={index}
+                        name={highscore.name}
+                        score={highscore.score}
+                      />
+                    )
+                  }
+                })
+                .filter((component) => component)?.[0]
+            }
           </Highscores>
           <Spacer />
           <Status>
@@ -613,3 +634,28 @@ window.addEventListener('beforeunload', function (e) {
   e.preventDefault()
   e.returnValue = 'Are you sure you want to leave?'
 })
+
+function createPlayerId() {
+  const id = uuid()
+  localStorage.setItem('playerid', id)
+  return id
+}
+
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0,
+      v = c == 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+function HighscoreEntry({index, name, score}) {
+  return (
+    <div key={index}>
+      {padEnd(index + 1 + '.', 3, '.') +
+        ' ' +
+        padEnd(name?.slice(0, 8) ?? 'anon', 10, '.')}
+      {padStart(score + '', 5, '.')}
+    </div>
+  )
+}
