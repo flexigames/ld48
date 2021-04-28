@@ -6,7 +6,7 @@ import {Floor, Segment, Tile} from './types'
 import {canBePlaced, createFloor, placeTile, wasJustCompleted} from './floor'
 import {cloneRotated, createTile} from './tile'
 import {segmentCount} from './const'
-import {addHighscore, getHighscores, Score} from './firebase'
+import {addHighscore, getHighscores, Score, useHighscores} from './firebase'
 import {useAnimationTrigger} from './animation'
 import ScoreDisplay from './ScoreDisplay'
 
@@ -36,19 +36,11 @@ export default function App() {
 
   const [challenge, setChallenge] = useState<ChallengeData>(generateChallenge)
 
-  const [highscores, setHighscores] = useState<Score[]>([])
-
   const [gameover, setGameover] = useState(false)
 
   const [scoreAddition, setScoreAddition] = useState<number>()
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      getHighscores().then(setHighscores)
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
+  const highscores = useHighscores()
 
   useEffect(() => {
     if (movesLeft === 0) setGameover(true)

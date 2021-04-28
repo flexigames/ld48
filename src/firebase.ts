@@ -1,14 +1,15 @@
 import firebase from 'firebase'
 import {sortBy} from 'lodash'
+import {useEffect, useState} from 'react'
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyBalqEJgDi1d42Y3EsjxVuUEEPZcppWVbE',
-  authDomain: 'ld-48-292a6.firebaseapp.com',
-  projectId: 'ld-48-292a6',
-  storageBucket: 'ld-48-292a6.appspot.com',
-  messagingSenderId: '536667189817',
-  appId: '1:536667189817:web:7e05f00af02cce6c4793e8',
-  databaseURL: 'https://ld-48-292a6-default-rtdb.firebaseio.com/'
+  apiKey: 'AIzaSyDU9_NbK0O-F5jmd7YP9L5qkdB7hthZt_8',
+  authDomain: 'ld-48-version-3.firebaseapp.com',
+  databaseURL: 'https://ld-48-version-3-default-rtdb.firebaseio.com',
+  projectId: 'ld-48-version-3',
+  storageBucket: 'ld-48-version-3.appspot.com',
+  messagingSenderId: '113010370424',
+  appId: '1:113010370424:web:dcfcdfd96555075e388a8d'
 })
 
 const database = firebase.database()
@@ -17,10 +18,16 @@ export function addHighscore(score: number, name: string, playerId: string) {
   database.ref('highscores').push().set({score, name, playerId})
 }
 
-export async function getHighscores(): Promise<Score[]> {
-  const snapshot = await database.ref('highscores').get()
-  const highscores = Object.values(snapshot.val())
-  return sortBy(highscores, ({score}) => -score) as Score[]
+export function useHighscores() {
+  const [highscores, setHighscores] = useState<Score[]>([])
+  useEffect(() => {
+    database.ref('highscores').on('value', (snapshot) => {
+      const highscores = Object.values(snapshot.val())
+      console.log(highscores)
+      setHighscores(sortBy(highscores, ({score}) => -score) as Score[])
+    })
+  }, [])
+  return highscores
 }
 
 export type Score = {
