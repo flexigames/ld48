@@ -23,7 +23,6 @@ export function useHighscores() {
   useEffect(() => {
     database.ref('highscores').on('value', (snapshot) => {
       const highscores = Object.values(snapshot.val())
-      console.log(highscores)
       setHighscores(sortBy(highscores, ({score}) => -score) as Score[])
     })
   }, [])
